@@ -1,16 +1,22 @@
 import { defineStore } from 'pinia'
 
+interface CameraInfo {
+  deviceId: string
+  facingMode: 'environment' | 'user'
+  isAndroid: boolean
+}
+
 export const useFilterStore = defineStore('filter', {
   state: () => ({
-    selectedCamera: '',
+    selectedCamera: null as CameraInfo | null,
     selectedBackground: null as number | null,
     selectedCharacter: null as number | null,
     selectedText: ''
   }),
 
   actions: {
-    setCamera(cameraId: string) {
-      this.selectedCamera = cameraId
+    setCamera(cameraInfo: CameraInfo) {
+      this.selectedCamera = cameraInfo
     },
     setBackground(backgroundId: number) {
       this.selectedBackground = backgroundId
@@ -22,7 +28,7 @@ export const useFilterStore = defineStore('filter', {
       this.selectedText = text
     },
     reset() {
-      this.selectedCamera = ''
+      this.selectedCamera = null
       this.selectedBackground = null
       this.selectedCharacter = null
       this.selectedText = ''

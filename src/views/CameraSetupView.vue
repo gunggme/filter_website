@@ -117,7 +117,7 @@ const startCamera = async () => {
   } catch (error) {
     console.error('카메라 시작 실패:', error)
     isStreamActive.value = false
-    alert('카메라를 시작할 수 없습니다.')
+    alert('카메라를 시��할 수 없습니다.')
   }
 }
 
@@ -127,9 +127,25 @@ const handleCameraChange = () => {
   }
 }
 
+// 카메라 정지
+const stopCamera = () => {
+  if (videoRef.value?.srcObject) {
+    const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
+    tracks.forEach(track => track.stop())
+    videoRef.value.srcObject = null
+  }
+  isStreamActive.value = false
+}
+
 const handleNext = () => {
   if (selectedCamera.value && isStreamActive.value) {
-    store.setCamera(selectedCamera.value)
+    // 카메라 정보 저장
+    store.setCamera({
+      deviceId: selectedCamera.value,
+      facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user',
+      isAndroid: isAndroid()
+    })
+    stopCamera() // 다음 화면으로 이동하기 전에 카메라 정지
     router.push('/background')
   }
 }
@@ -159,11 +175,7 @@ onUnmounted(() => {
   // 이벤트 리스너 제거
   window.removeEventListener('orientationchange', handleOrientationChange)
   window.removeEventListener('resize', handleOrientationChange)
-
-  if (videoRef.value?.srcObject) {
-    const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
-    tracks.forEach(track => track.stop())
-  }
+  stopCamera() // 컴포넌트 언마운트 시 카메라 정지
 })
 </script>
 

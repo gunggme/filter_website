@@ -307,74 +307,75 @@ const loadCharacterImage = async () => {
 // 안드로이드 체크 함수 추가
 const isAndroid = () => /Android/i.test(navigator.userAgent)
 
-// 카메라 스트림 처리
+// 카메라 시작
 const startCamera = async () => {
   try {
-    if (!videoRef.value || !canvasRef.value) return
+    if (!videoRef.value || !canvasRef.value || !store.selectedCamera) return
 
-    // 안드로이드 환경에 맞는 비디오 설정
+    // 이전 스트림이 있다면 정지
+    if (videoRef.value.srcObject) {
+      const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
+      tracks.forEach(track => track.stop())
+    }
+
+    // 저장된 카메라 정보 사용
     const constraints = {
-      video: {
-        facingMode: isAndroid() ? 'environment' : undefined,
-        deviceId: !isAndroid() ? store.selectedCamera || undefined : undefined,
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
-    }
-
-    // 먼저 카메라 스트림을 가져옵니다
-    const stream = await navigator.mediaDevices.getUserMedia(constraints)
-    
-    // 안드로이드에서 화면 방향 처리
-    const track = stream.getVideoTracks()[0]
-    const capabilities = track.getCapabilities()
-    if (capabilities.facingMode && capabilities.facingMode.includes('environment')) {
-      // 후면 카메라인 경우 화면 반전 제거
-      videoRef.value.style.transform = 'scaleX(1)'
-    }
-
-    videoRef.value.srcObject = stream
-
-    // 비디오 메타데이터가 로드되면 캔버스 크기를 설정합니다
-    await new Promise((resolve) => {
-      videoRef.value!.onloadedmetadata = () => {
-        const { videoWidth, videoHeight } = videoRef.value!
-        
-        // 화면 방향에 따른 캔버스 크기 조정
-        if (window.innerHeight > window.innerWidth) {
-          // 세로 모드
-          canvasRef.value!.width = videoHeight
-          canvasRef.value!.height = videoWidth
-        } else {
-          // 가로 모드
-          canvasRef.value!.width = videoWidth
-          canvasRef.value!.height = videoHeight
-        }
-        resolve(true)
-      }
-    })
-
-    // MediaPipe 초기화를 순차적으로 진행
-    await initializeSelfieSegmentation()
-    await initializeFaceMesh()
-
-    // Camera 유틸리티 설정
-    const camera = new Camera(videoRef.value, {
-      onFrame: async () => {
-        if (videoRef.value) {
-          try {
-            await selfieSegmentation!.send({ image: videoRef.value })
-            await faceMesh.send({ image: videoRef.value })
-          } catch (error) {
-            console.error('프레임 처리 오류:', error)
+      video: store.selectedCamera.isAndroid
+        ? {
+            facingMode: store.selectedCamera.facingMode
           }
-        }
-      },
-      width: canvasRef.value.width,
-      height: canvasRef.value.height
-    })
+        : {
+            deviceId: { exact: store.selectedCamera.deviceId }
+          }
+    }
 
-    await camera.start()
+    console.log('카메라 시작 시도:', constraints)
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+    if (videoRef.value) {
+      videoRef.value.srcObject = stream
+
+      // 비디오 메타데이터가 로드되면 캔버스 크기를 설정합니다
+      await new Promise((resolve) => {
+        videoRef.value!.onloadedmetadata = () => {
+          const { videoWidth, videoHeight } = videoRef.value!
+          
+          // 화면 방향에 따른 캔버스 크기 조정
+          if (window.innerHeight > window.innerWidth) {
+            // 세로 모드
+            canvasRef.value!.width = videoHeight
+            canvasRef.value!.height = videoWidth
+          } else {
+            // 가로 모드
+            canvasRef.value!.width = videoWidth
+            canvasRef.value!.height = videoHeight
+          }
+          resolve(true)
+        }
+      })
+
+      // MediaPipe 초기화를 순차적으로 진행
+      await initializeSelfieSegmentation()
+      await initializeFaceMesh()
+
+      // Camera 유틸리티 설정
+      const camera = new Camera(videoRef.value, {
+        onFrame: async () => {
+          if (videoRef.value) {
+            try {
+              await selfieSegmentation!.send({ image: videoRef.value })
+              await faceMesh.send({ image: videoRef.value })
+            } catch (error) {
+              console.error('프레임 처리 오류:', error)
+            }
+          }
+        },
+        width: canvasRef.value.width,
+        height: canvasRef.value.height
+      })
+
+      await camera.start()
+    }
   } catch (error) {
     console.error('카메라 시작 실패:', error)
     if (error instanceof DOMException && error.name === 'NotAllowedError') {
@@ -383,44 +384,23 @@ const startCamera = async () => {
   }
 }
 
-// 화면 방향 변경 감지
-const handleOrientationChange = () => {
-  if (!videoRef.value || !canvasRef.value) return
-  
-  const { videoWidth, videoHeight } = videoRef.value
-  if (window.innerHeight > window.innerWidth) {
-    // 세로 모드
-    canvasRef.value.width = videoHeight
-    canvasRef.value.height = videoWidth
-  } else {
-    // 가로 모드
-    canvasRef.value.width = videoWidth
-    canvasRef.value.height = videoHeight
+// 카메라 정지
+const stopCamera = () => {
+  if (videoRef.value?.srcObject) {
+    const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
+    tracks.forEach(track => track.stop())
+    videoRef.value.srcObject = null
   }
 }
 
 onMounted(async () => {
-  // 화면 방향 변경 이벤트 리스너 등록
-  window.addEventListener('orientationchange', handleOrientationChange)
-  window.addEventListener('resize', handleOrientationChange)
-  
   await loadBackgroundImage()
   await loadCharacterImage()
-  startCamera()
+  await startCamera()
 })
 
 onUnmounted(() => {
-  // 이벤트 리스너 제거
-  window.removeEventListener('orientationchange', handleOrientationChange)
-  window.removeEventListener('resize', handleOrientationChange)
-  
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId)
-  }
-  if (videoRef.value?.srcObject) {
-    const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
-    tracks.forEach(track => track.stop())
-  }
+  stopCamera()
   if (selfieSegmentation) {
     selfieSegmentation.close()
   }
@@ -443,7 +423,7 @@ onUnmounted(() => {
           autoplay 
           playsinline
           muted
-          :style="{ transform: isAndroid() ? 'scaleX(1)' : 'scaleX(-1)' }"
+          :style="{ transform: store.selectedCamera?.facingMode === 'environment' ? 'scaleX(1)' : 'scaleX(-1)' }"
         ></video>
         <canvas 
           ref="canvasRef"
