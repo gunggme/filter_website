@@ -319,14 +319,12 @@ const startCamera = async () => {
     }
 
     // 저장된 카메라 정보 사용
-    const constraints = {
-      video: store.selectedCamera.isAndroid
-        ? {
-            facingMode: store.selectedCamera.facingMode
-          }
-        : {
-            deviceId: { exact: store.selectedCamera.deviceId }
-          }
+    const constraints: MediaStreamConstraints = {
+      video: {
+        ...(store.selectedCamera.isAndroid
+          ? { facingMode: { exact: store.selectedCamera.facingMode } }
+          : { deviceId: { exact: store.selectedCamera.deviceId } })
+      }
     }
 
     console.log('카메라 시작 시도:', constraints)

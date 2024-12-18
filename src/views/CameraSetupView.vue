@@ -8,7 +8,7 @@ const store = useFilterStore()
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const cameras = ref<MediaDeviceInfo[]>([])
-const selectedCamera = ref(store.selectedCamera || '')
+const selectedCamera = ref<string>('')
 const isStreamActive = ref(false)
 
 // 안드로이드 체크 함수
@@ -87,14 +87,12 @@ const startCamera = async () => {
     }
 
     const isAndroidEnv = isAndroid()
-    const constraints = {
-      video: isAndroidEnv
-        ? {
-            facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user'
-          }
-        : {
-            deviceId: { exact: selectedCamera.value }
-          }
+    const constraints: MediaStreamConstraints = {
+      video: {
+        ...(isAndroidEnv
+          ? { facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user' }
+          : { deviceId: { exact: selectedCamera.value } })
+      }
     }
 
     console.log('카메라 시작 시도:', constraints)
@@ -117,7 +115,7 @@ const startCamera = async () => {
   } catch (error) {
     console.error('카메라 시작 실패:', error)
     isStreamActive.value = false
-    alert('카메라를 시��할 수 없습니다.')
+    alert('카메라를 시할 수 없습니다.')
   }
 }
 
@@ -139,13 +137,14 @@ const stopCamera = () => {
 
 const handleNext = () => {
   if (selectedCamera.value && isStreamActive.value) {
+    const isAndroidEnv = isAndroid()
     // 카메라 정보 저장
     store.setCamera({
       deviceId: selectedCamera.value,
       facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user',
-      isAndroid: isAndroid()
+      isAndroid: isAndroidEnv
     })
-    stopCamera() // 다음 화면으로 이동하기 전에 카메라 정지
+    stopCamera()
     router.push('/background')
   }
 }
@@ -194,7 +193,7 @@ onUnmounted(() => {
           muted
           :style="{ transform: isAndroid() && selectedCamera === 'environment' ? 'scaleX(1)' : 'scaleX(-1)' }"
         ></video>
-      </div>
+      </div>ㅋ
 
       <div class="camera-controls">
         <select 
@@ -236,7 +235,7 @@ onUnmounted(() => {
   padding: 16px;
   background-color: #6200EE;
   color: white;
-  elevation: 4;
+  /* elevation: 4; */
 }
 
 .toolbar h1 {
