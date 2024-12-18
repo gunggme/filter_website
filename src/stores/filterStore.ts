@@ -4,6 +4,8 @@ interface CameraInfo {
   deviceId: string
   facingMode: 'environment' | 'user'
   isAndroid: boolean
+  width: number
+  height: number
 }
 
 export const useFilterStore = defineStore('filter', {

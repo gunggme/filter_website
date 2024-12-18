@@ -87,11 +87,25 @@ const startCamera = async () => {
     }
 
     const isAndroidEnv = isAndroid()
-    const constraints: MediaStreamConstraints = {
-      video: {
-        ...(isAndroidEnv
-          ? { facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user' }
-          : { deviceId: { exact: selectedCamera.value } })
+    let constraints: MediaStreamConstraints
+
+    if (isAndroidEnv) {
+      // 안드로이드용 제약 조건
+      constraints = {
+        video: {
+          facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      }
+    } else {
+      // PC용 제약 조건
+      constraints = {
+        video: {
+          deviceId: { exact: selectedCamera.value },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
       }
     }
 
@@ -115,7 +129,7 @@ const startCamera = async () => {
   } catch (error) {
     console.error('카메라 시작 실패:', error)
     isStreamActive.value = false
-    alert('카메라를 시할 수 없습니다.')
+    alert('카메라를 시작할 수 없습니다.')
   }
 }
 
@@ -142,7 +156,9 @@ const handleNext = () => {
     store.setCamera({
       deviceId: selectedCamera.value,
       facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user',
-      isAndroid: isAndroidEnv
+      isAndroid: isAndroidEnv,
+      width: videoRef.value?.videoWidth || 1280,
+      height: videoRef.value?.videoHeight || 720
     })
     stopCamera()
     router.push('/background')

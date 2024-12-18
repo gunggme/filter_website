@@ -319,11 +319,25 @@ const startCamera = async () => {
     }
 
     // 저장된 카메라 정보 사용
-    const constraints: MediaStreamConstraints = {
-      video: {
-        ...(store.selectedCamera.isAndroid
-          ? { facingMode: { exact: store.selectedCamera.facingMode } }
-          : { deviceId: { exact: store.selectedCamera.deviceId } })
+    let constraints: MediaStreamConstraints
+
+    if (store.selectedCamera.isAndroid) {
+      // 안드로이드용 제약 조건
+      constraints = {
+        video: {
+          facingMode: store.selectedCamera.facingMode,
+          width: { ideal: store.selectedCamera.width },
+          height: { ideal: store.selectedCamera.height }
+        }
+      }
+    } else {
+      // PC용 제약 조건
+      constraints = {
+        video: {
+          deviceId: { exact: store.selectedCamera.deviceId },
+          width: { ideal: store.selectedCamera.width },
+          height: { ideal: store.selectedCamera.height }
+        }
       }
     }
 
@@ -378,6 +392,8 @@ const startCamera = async () => {
     console.error('카메라 시작 실패:', error)
     if (error instanceof DOMException && error.name === 'NotAllowedError') {
       alert('카메라 권한이 필요합니다. 설정에서 카메라 권한을 허용해주세요.')
+    } else {
+      alert('카메라를 시작할 수 없습니다. 다시 시도해주세요.')
     }
   }
 }
