@@ -14,30 +14,25 @@ const isStreamActive = ref(false)
 // 안드로이드 체크 함수
 const isAndroid = () => /Android/i.test(navigator.userAgent)
 
-// 카메라 권한 요청
-const requestCameraPermission = async () => {
+// 카메라 권한 요청과 초기화를 한 번에 처리
+const initializeCamera = async () => {
   try {
-    // 안드로이드의 경우 더 단순한 제약조건으로 시도
-    const constraints = {
-      video: isAndroid() ? true : { width: { ideal: 1280 }, height: { ideal: 720 } }
+    console.log('카메라 초기화 시작')
+    
+    // 이전 스트림이 있다면 정지
+    if (videoRef.value?.srcObject) {
+      const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
+      tracks.forEach(track => track.stop())
     }
-    await navigator.mediaDevices.getUserMedia(constraints)
-    return true
-  } catch (error) {
-    console.error('카메라 권한 요청 실패:', error)
-    alert('카메라 권한이 필요합니다. 설정에서 카메라 권한을 허용해주세요.')
-    return false
-  }
-}
 
-// 카메라 목록 가져오기
-const getCameras = async () => {
-  try {
-    // 먼저 카메라 권한 요청
-    const hasPermission = await requestCameraPermission()
-    if (!hasPermission) return
+    // 안드로이드 환경 확인
+    const isAndroidEnv = isAndroid()
+    console.log('환경:', isAndroidEnv ? '안드로이드' : 'PC')
 
-    if (isAndroid()) {
+    // 초기 권한 요청
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+    
+    if (isAndroidEnv) {
       // 안드로이드의 경우 단순화된 카메라 목록
       cameras.value = [
         { deviceId: 'environment', label: '후면 카메라', kind: 'videoinput' },
@@ -46,7 +41,6 @@ const getCameras = async () => {
       
       // 기본값으로 후면 카메라 선택
       selectedCamera.value = 'environment'
-      await startCamera()
     } else {
       // PC의 경우 실제 디바이스 목록 사용
       const devices = await navigator.mediaDevices.enumerateDevices()
@@ -55,73 +49,17 @@ const getCameras = async () => {
       
       if (videoCameras.length > 0) {
         selectedCamera.value = videoCameras[0].deviceId
-        await startCamera()
       }
     }
-  } catch (error) {
-    console.error('카메라 목록을 가져오는데 실패했습니다:', error)
-  }
-}
 
-// 카메라 시작
-const startCamera = async () => {
-  try {
-    // 이전 스트림이 있다면 정지
-    if (videoRef.value?.srcObject) {
-      const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
-      tracks.forEach(track => track.stop())
-    }
+    // 초기 스트림 정지
+    stream.getTracks().forEach(track => track.stop())
 
-    let constraints: MediaStreamConstraints
+    // 선택된 카메라로 스트림 시작
+    await startCamera()
     
-    if (isAndroid()) {
-      // 안드로이드용 단순화된 제약조건
-      constraints = {
-        video: {
-          facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user'
-        }
-      }
-    } else {
-      // PC용 제약조건
-      constraints = {
-        video: {
-          deviceId: selectedCamera.value ? { exact: selectedCamera.value } : undefined,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      }
-    }
-
-    console.log('카메라 시작 시도:', constraints)
-    const stream = await navigator.mediaDevices.getUserMedia(constraints)
-    console.log('카메라 스트림 획득 성공')
-
-    if (videoRef.value) {
-      videoRef.value.srcObject = stream
-      isStreamActive.value = true
-
-      // 비디오 로드 완료 대기
-      await new Promise((resolve) => {
-        videoRef.value!.onloadedmetadata = () => {
-          console.log('비디오 메타데이터 로드됨')
-          resolve(true)
-        }
-      })
-
-      // 안드로이드에서 화면 방향 처리
-      const track = stream.getVideoTracks()[0]
-      console.log('활성 트랙:', track.getSettings())
-      
-      // 후면 카메라 확인
-      const settings = track.getSettings()
-      if (settings.facingMode === 'environment') {
-        videoRef.value.style.transform = 'scaleX(1)'
-      }
-    }
   } catch (error) {
-    console.error('카메라 시작 실패:', error)
-    isStreamActive.value = false
-    
+    console.error('카메라 초기화 실패:', error)
     if (error instanceof DOMException) {
       switch (error.name) {
         case 'NotAllowedError':
@@ -130,15 +68,56 @@ const startCamera = async () => {
         case 'NotFoundError':
           alert('카메라를 찾을 수 없습니다.')
           break
-        case 'NotReadableError':
-          alert('카메라가 사용 중입니다.')
-          break
         default:
-          alert('카메라 시작 중 오류가 발생했습니다: ' + error.name)
+          alert('카메라 초기화 중 오류가 발생했습니다: ' + error.name)
       }
-    } else {
-      alert('알 수 없는 오류가 발생했습니다.')
     }
+  }
+}
+
+// 카메라 시작
+const startCamera = async () => {
+  try {
+    if (!selectedCamera.value) return
+    
+    // 이전 스트림이 있다면 정지
+    if (videoRef.value?.srcObject) {
+      const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
+      tracks.forEach(track => track.stop())
+    }
+
+    const isAndroidEnv = isAndroid()
+    const constraints = {
+      video: isAndroidEnv
+        ? {
+            facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user'
+          }
+        : {
+            deviceId: { exact: selectedCamera.value }
+          }
+    }
+
+    console.log('카메라 시작 시도:', constraints)
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    console.log('카메라 스트림 획득 성공')
+
+    if (videoRef.value) {
+      videoRef.value.srcObject = stream
+      
+      // 비디오 로드 완료 대기
+      await new Promise((resolve) => {
+        videoRef.value!.onloadedmetadata = () => {
+          console.log('비디오 메타데이터 로드됨')
+          resolve(true)
+        }
+      })
+
+      isStreamActive.value = true
+    }
+  } catch (error) {
+    console.error('카메라 시작 실패:', error)
+    isStreamActive.value = false
+    alert('카메라를 시작할 수 없습니다.')
   }
 }
 
@@ -157,15 +136,14 @@ const handleNext = () => {
 
 // 화면 방향 변경 감지
 const handleOrientationChange = () => {
-  if (selectedCamera.value && isStreamActive.value) {
+  if (isStreamActive.value) {
     startCamera()
   }
 }
 
 onMounted(async () => {
   try {
-    console.log('컴포넌트 마운트됨, 환경:', isAndroid() ? '안드로이드' : 'PC')
-    await getCameras()
+    await initializeCamera()
     
     // 화면 방향 변경 이벤트 리스너 등록 (안드로이드인 경우에만)
     if (isAndroid()) {
