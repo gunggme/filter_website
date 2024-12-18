@@ -425,125 +425,177 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="final-view android-screen">
-    <div class="toolbar">
-      <h1>최종 화면</h1>
+  <div class="camera-app">
+    <div class="top-controls">
+      <button 
+        class="back-button"
+        @click="$router.push('/background')"
+      >
+        <span class="material-icons">arrow_back</span>
+      </button>
     </div>
 
-    <div class="content">
-      <div class="camera-container">
-        <video 
-          ref="videoRef" 
-          autoplay 
-          playsinline
-          muted
-          :style="{ transform: store.selectedCamera?.facingMode === 'environment' ? 'scaleX(1)' : 'scaleX(-1)' }"
-        ></video>
-        <canvas 
-          ref="canvasRef"
-        ></canvas>
-      </div>
+    <div class="camera-view">
+      <video 
+        ref="videoRef" 
+        autoplay 
+        playsinline
+        muted
+        :style="{ transform: store.selectedCamera?.facingMode === 'environment' ? 'scaleX(1)' : 'scaleX(-1)' }"
+      ></video>
+      <canvas 
+        ref="canvasRef"
+      ></canvas>
+    </div>
 
-      <div class="action-buttons">
-        <button 
-          class="android-button secondary"
-          @click="$router.push('/background')"
-        >
-          배경 다시 선택하기
-        </button>
-        <button 
-          class="android-button"
-          @click="saveImage"
-        >
-          사진 저장하기
-        </button>
+    <div class="bottom-controls">
+      <div class="control-button preview-button">
+        <span class="material-icons">photo_library</span>
+      </div>
+      <div class="capture-button" @click="saveImage">
+        <div class="inner-circle"></div>
+      </div>
+      <div class="control-button switch-button">
+        <span class="material-icons">flip_camera_ios</span>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.android-screen {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background-color: #FFFFFF;
-}
-
-.toolbar {
-  padding: 16px;
-  background-color: #6200EE;
-  color: white;
-  elevation: 4;
-}
-
-.toolbar h1 {
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.content {
-  flex: 1;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.camera-container {
-  width: 100%;
-  aspect-ratio: 3/4;
+.camera-app {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: #000;
-  border-radius: 8px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  z-index: 100;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+}
+
+.back-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.back-button:active {
+  background: rgba(255,255,255,0.2);
+}
+
+.camera-view {
+  flex: 1;
   position: relative;
-  margin: 0 auto;
-  max-width: 100vh; /* 화면 높이를 넘지 않도록 제한 */
+  overflow: hidden;
+  background: #000;
+}
+
+video, canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 video {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
   opacity: 0;
 }
 
-canvas {
+.bottom-controls {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform-origin: center;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+}
+
+.control-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+}
+
+.control-button:active {
+  background: rgba(255,255,255,0.4);
+}
+
+.capture-button {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  padding: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inner-circle {
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.capture-button:active .inner-circle {
+  width: 85%;
+  height: 85%;
 }
 
 /* 안드로이드 대응을 위한 추가 스타일 */
 @media screen and (orientation: landscape) {
-  .camera-container {
-    aspect-ratio: 4/3;
-    max-height: 80vh;
+  .bottom-controls {
+    right: 120px;
+    height: 100%;
+    width: 120px;
+    flex-direction: column;
+    background: linear-gradient(to left, rgba(0,0,0,0.5), transparent);
   }
 }
 
-.action-buttons {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  margin-top: auto;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.9);
-  z-index: 1000;
-}
+/* 노치 디스플레이 대응 */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .top-controls {
+    padding-top: calc(16px + env(safe-area-inset-top));
+    height: calc(60px + env(safe-area-inset-top));
+  }
 
-.android-button {
-  flex: 1;
-  min-height: 48px; /* 터치하기 쉽게 버튼 크기 증가 */
-}
-
-.android-button.secondary {
-  background-color: #03DAC6;
+  .bottom-controls {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
 }
 </style> 
