@@ -193,7 +193,7 @@ onUnmounted(() => {
           muted
           :style="{ transform: isAndroid() && selectedCamera === 'environment' ? 'scaleX(1)' : 'scaleX(-1)' }"
         ></video>
-      </div>ㅋ
+      </div>
 
       <div class="camera-controls">
         <select 
