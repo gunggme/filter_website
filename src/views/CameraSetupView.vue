@@ -11,33 +11,131 @@ const cameras = ref<MediaDeviceInfo[]>([])
 const selectedCamera = ref(store.selectedCamera || '')
 const isStreamActive = ref(false)
 
-const getCameras = async () => {
+// 안드로이드 체크 함수
+const isAndroid = () => /Android/i.test(navigator.userAgent)
+
+// 카메라 권한 요청
+const requestCameraPermission = async () => {
   try {
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    cameras.value = devices.filter(device => device.kind === 'videoinput')
+    // 먼저 최소한의 제약조건으로 권한 요청
+    await navigator.mediaDevices.getUserMedia({ video: true })
+    return true
   } catch (error) {
-    console.error('카메라 목록을 가져오는데 실패했습니다:', error)
+    console.error('카메라 권한 요청 실패:', error)
+    if (error instanceof DOMException && error.name === 'NotAllowedError') {
+      alert('카메라 권한이 필요합니다. 설정에서 카메라 권한을 허용해주세요.')
+    } else {
+      alert('카메라를 시작할 수 없습니다. 브라우저 설정을 확인해주세요.')
+    }
+    return false
   }
 }
 
-const startCamera = async () => {
-  // 이전 스트림이 있다면 정지
-  if (videoRef.value?.srcObject) {
-    const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
-    tracks.forEach(track => track.stop())
-  }
-
+// 카메라 목록 가져오기
+const getCameras = async () => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: selectedCamera.value }
-    })
+    // 먼저 카메라 권한 요청
+    const hasPermission = await requestCameraPermission()
+    if (!hasPermission) return
+
+    // 권한을 얻은 후 디바이스 목록 조회
+    await navigator.mediaDevices.getUserMedia({ video: true })
+    const devices = await navigator.mediaDevices.enumerateDevices()
+    const videoCameras = devices.filter(device => device.kind === 'videoinput')
+    
+    if (isAndroid()) {
+      // 안드로이드의 경우 facingMode로 구분
+      cameras.value = [
+        { deviceId: 'environment', label: '후면 카메라', kind: 'videoinput' },
+        { deviceId: 'user', label: '전면 카메라', kind: 'videoinput' }
+      ] as MediaDeviceInfo[]
+      // 기본값으로 후면 카메라 선택
+      if (!selectedCamera.value) {
+        selectedCamera.value = 'environment'
+        await startCamera()
+      }
+    } else {
+      cameras.value = videoCameras
+      // PC의 경우 첫 번째 카메라 자동 선택
+      if (videoCameras.length > 0 && !selectedCamera.value) {
+        selectedCamera.value = videoCameras[0].deviceId
+        await startCamera()
+      }
+    }
+  } catch (error) {
+    console.error('카메라 목록을 가져오는데 실패했습니다:', error)
+    alert('카메라에 접근할 수 없습니다. HTTPS 연결을 확인해주세요.')
+  }
+}
+
+// 카메라 시작
+const startCamera = async () => {
+  try {
+    // 이전 스트림이 있다면 정지
+    if (videoRef.value?.srcObject) {
+      const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
+      tracks.forEach(track => track.stop())
+    }
+
+    const constraints = {
+      video: isAndroid()
+        ? {
+            facingMode: { exact: selectedCamera.value === 'environment' ? 'environment' : 'user' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        : {
+            deviceId: selectedCamera.value ? { exact: selectedCamera.value } : undefined,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+    }
+
+    console.log('카메라 시작 시도:', constraints)
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    console.log('카메라 스트림 획득 성공')
+
     if (videoRef.value) {
       videoRef.value.srcObject = stream
       isStreamActive.value = true
+
+      // 비디오 로드 완료 대기
+      await new Promise((resolve) => {
+        videoRef.value!.onloadedmetadata = () => {
+          console.log('비디오 메타데이터 로드됨')
+          resolve(true)
+        }
+      })
+
+      // 안드로이드에서 화면 방향 처리
+      const track = stream.getVideoTracks()[0]
+      const capabilities = track.getCapabilities()
+      console.log('카메라 기능:', capabilities)
+      
+      if (capabilities.facingMode && capabilities.facingMode.includes('environment')) {
+        // 후면 카메라인 경우 화면 반전 제거
+        videoRef.value.style.transform = 'scaleX(1)'
+      }
     }
   } catch (error) {
     console.error('카메라 시작 실패:', error)
     isStreamActive.value = false
+    
+    if (error instanceof DOMException) {
+      switch (error.name) {
+        case 'NotAllowedError':
+          alert('카메라 권한이 필요합니다. 설정에서 카메라 권한을 허용해주세요.')
+          break
+        case 'NotFoundError':
+          alert('선택한 카메라를 찾을 수 없습니다.')
+          break
+        case 'NotReadableError':
+          alert('카메라에 접근할 수 없습니다. 다른 앱에서 사용 중일 수 있습니다.')
+          break
+        default:
+          alert('카메라 시작 중 오류가 발생했습니다.')
+      }
+    }
   }
 }
 
@@ -54,16 +152,27 @@ const handleNext = () => {
   }
 }
 
-onMounted(async () => {
-  await getCameras()
-  if (store.selectedCamera) {
-    selectedCamera.value = store.selectedCamera
+// 화면 방향 변경 감지
+const handleOrientationChange = () => {
+  if (selectedCamera.value && isStreamActive.value) {
     startCamera()
+  }
+}
+
+onMounted(async () => {
+  try {
+    console.log('컴포넌트 마운트됨')
+    await getCameras()
+  } catch (error) {
+    console.error('초기화 중 오류 발생:', error)
   }
 })
 
-// 컴포넌트가 언마운트될 때 카메라 스트림 정리
 onUnmounted(() => {
+  // 이벤트 리스너 제거
+  window.removeEventListener('orientationchange', handleOrientationChange)
+  window.removeEventListener('resize', handleOrientationChange)
+
   if (videoRef.value?.srcObject) {
     const tracks = (videoRef.value.srcObject as MediaStream).getTracks()
     tracks.forEach(track => track.stop())
@@ -83,7 +192,8 @@ onUnmounted(() => {
           ref="videoRef" 
           autoplay 
           playsinline
-          :style="{ transform: 'scaleX(-1)' }"
+          muted
+          :style="{ transform: isAndroid() && selectedCamera === 'environment' ? 'scaleX(1)' : 'scaleX(-1)' }"
         ></video>
       </div>
 
@@ -149,6 +259,9 @@ onUnmounted(() => {
   background-color: #000000;
   border-radius: 8px;
   overflow: hidden;
+  position: relative;
+  margin: 0 auto;
+  max-width: 100vh;
 }
 
 video {
@@ -162,6 +275,7 @@ video {
   flex-direction: column;
   gap: 16px;
   padding: 16px;
+  margin-top: auto;
 }
 
 .android-select {
@@ -172,10 +286,33 @@ video {
   background-color: #FFFFFF;
   font-size: 16px;
   color: #212121;
+  height: 48px;
+}
+
+.android-button {
+  width: 100%;
+  min-height: 48px;
 }
 
 .android-button:disabled {
   background-color: #BDBDBD;
   cursor: not-allowed;
+}
+
+/* 안드로이드 대응을 위한 추가 스타일 */
+@media screen and (orientation: landscape) {
+  .preview-container {
+    aspect-ratio: 4/3;
+    max-height: 80vh;
+  }
+
+  .camera-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 1000;
+  }
 }
 </style> 

@@ -304,30 +304,52 @@ const loadCharacterImage = async () => {
   }
 }
 
+// 안드로이드 체크 함수 추가
+const isAndroid = () => /Android/i.test(navigator.userAgent)
+
 // 카메라 스트림 처리
 const startCamera = async () => {
   try {
     if (!videoRef.value || !canvasRef.value) return
 
-    // 비디오 및 캔버스 크기 설정
+    // 안드로이드 환경에 맞는 비디오 설정
     const constraints = {
       video: {
-        deviceId: store.selectedCamera || undefined,
-        width: { ideal: window.innerWidth },
-        height: { ideal: window.innerHeight }
+        facingMode: isAndroid() ? 'environment' : undefined,
+        deviceId: !isAndroid() ? store.selectedCamera || undefined : undefined,
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       }
     }
 
     // 먼저 카메라 스트림을 가져옵니다
     const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    
+    // 안드로이드에서 화면 방향 처리
+    const track = stream.getVideoTracks()[0]
+    const capabilities = track.getCapabilities()
+    if (capabilities.facingMode && capabilities.facingMode.includes('environment')) {
+      // 후면 카메라인 경우 화면 반전 제거
+      videoRef.value.style.transform = 'scaleX(1)'
+    }
+
     videoRef.value.srcObject = stream
 
     // 비디오 메타데이터가 로드되면 캔버스 크기를 설정합니다
     await new Promise((resolve) => {
       videoRef.value!.onloadedmetadata = () => {
         const { videoWidth, videoHeight } = videoRef.value!
-        canvasRef.value!.width = videoWidth
-        canvasRef.value!.height = videoHeight
+        
+        // 화면 방향에 따른 캔버스 크기 조정
+        if (window.innerHeight > window.innerWidth) {
+          // 세로 모드
+          canvasRef.value!.width = videoHeight
+          canvasRef.value!.height = videoWidth
+        } else {
+          // 가로 모드
+          canvasRef.value!.width = videoWidth
+          canvasRef.value!.height = videoHeight
+        }
         resolve(true)
       }
     })
@@ -355,16 +377,43 @@ const startCamera = async () => {
     await camera.start()
   } catch (error) {
     console.error('카메라 시작 실패:', error)
+    if (error instanceof DOMException && error.name === 'NotAllowedError') {
+      alert('카메라 권한이 필요합니다. 설정에서 카메라 권한을 허용해주세요.')
+    }
+  }
+}
+
+// 화면 방향 변경 감지
+const handleOrientationChange = () => {
+  if (!videoRef.value || !canvasRef.value) return
+  
+  const { videoWidth, videoHeight } = videoRef.value
+  if (window.innerHeight > window.innerWidth) {
+    // 세로 모드
+    canvasRef.value.width = videoHeight
+    canvasRef.value.height = videoWidth
+  } else {
+    // 가로 모드
+    canvasRef.value.width = videoWidth
+    canvasRef.value.height = videoHeight
   }
 }
 
 onMounted(async () => {
+  // 화면 방향 변경 이벤트 리스너 등록
+  window.addEventListener('orientationchange', handleOrientationChange)
+  window.addEventListener('resize', handleOrientationChange)
+  
   await loadBackgroundImage()
   await loadCharacterImage()
   startCamera()
 })
 
 onUnmounted(() => {
+  // 이벤트 리스너 제거
+  window.removeEventListener('orientationchange', handleOrientationChange)
+  window.removeEventListener('resize', handleOrientationChange)
+  
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
   }
@@ -394,6 +443,7 @@ onUnmounted(() => {
           autoplay 
           playsinline
           muted
+          :style="{ transform: isAndroid() ? 'scaleX(1)' : 'scaleX(-1)' }"
         ></video>
         <canvas 
           ref="canvasRef"
@@ -453,6 +503,8 @@ onUnmounted(() => {
   border-radius: 8px;
   overflow: hidden;
   position: relative;
+  margin: 0 auto;
+  max-width: 100vh; /* 화면 높이를 넘지 않도록 제한 */
 }
 
 video {
@@ -468,6 +520,15 @@ canvas {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform-origin: center;
+}
+
+/* 안드로이드 대응을 위한 추가 스타일 */
+@media screen and (orientation: landscape) {
+  .camera-container {
+    aspect-ratio: 4/3;
+    max-height: 80vh;
+  }
 }
 
 .action-buttons {
@@ -475,10 +536,17 @@ canvas {
   gap: 16px;
   padding: 16px;
   margin-top: auto;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 1000;
 }
 
 .android-button {
   flex: 1;
+  min-height: 48px; /* 터치하기 쉽게 버튼 크기 증가 */
 }
 
 .android-button.secondary {
