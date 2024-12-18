@@ -53,8 +53,8 @@ const currentTexts = computed(() => {
 })
 
 const selectText = (textId: number) => {
-  selectedText.value = textId
-  store.setText(textId)
+  selectedText.value = String(textId)
+  store.setText(String(textId))
   router.push('/final')
 }
 </script>
@@ -79,7 +79,7 @@ const selectText = (textId: number) => {
         v-for="text in currentTexts"
         :key="text.id"
         class="text-item"
-        :class="{ selected: selectedText === text.id }"
+        :class="{ selected: selectedText === String(text.id) }"
         @click="selectText(text.id)"
       >
         {{ text.content }}

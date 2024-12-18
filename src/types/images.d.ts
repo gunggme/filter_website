@@ -8,7 +8,8 @@ declare module '*.png' {
   export default value
 }
 
-// 이미지 인덱스 시그니처 타입 추가
+// 이미지 인덱스 시그니처 타입 수정
 interface ImageImports {
+  [key: string]: () => Promise<typeof import('*.png')>
   [key: number]: () => Promise<typeof import('*.png')>
 } 

@@ -20,16 +20,15 @@ const processInterval = 1000 / 30
 
 const store = useFilterStore()
 
-// 배경 이미지 매핑
-const backgroundImages = {
+// backgroundImages와 characterImages 객체를 Record 타입으로 정의
+const backgroundImages: Record<number, () => Promise<typeof import('*.png')>> = {
   1: () => import('@/assets/backgrounds/bg1.png'),
   2: () => import('@/assets/backgrounds/bg2.png'),
   3: () => import('@/assets/backgrounds/bg3.png'),
   4: () => import('@/assets/backgrounds/bg4.png')
 }
 
-// 캐릭터 이미지 매핑
-const characterImages = {
+const characterImages: Record<number, () => Promise<typeof import('*.png')>> = {
   1: () => import('@/assets/characters/daram_panel.png'),
   2: () => import('@/assets/characters/daram_patmal_panel.png'),
   3: () => import('@/assets/characters/wind_panel.png'),
