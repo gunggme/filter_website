@@ -33,11 +33,15 @@ const initializeCamera = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true })
     
     if (isAndroidEnv) {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoCameras = devices.filter(device => device.kind === 'videoinput')
       // 안드로이드의 경우 단순화된 카메라 목록
       cameras.value = [
         { deviceId: 'environment', label: '후면 카메라', kind: 'videoinput' },
         { deviceId: 'user', label: '전면 카메라', kind: 'videoinput' }
       ] as MediaDeviceInfo[]
+
+      cameras.value.push(...videoCameras)
       
       // 기본값으로 후면 카메라 선택
       selectedCamera.value = 'environment'
