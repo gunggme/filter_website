@@ -1,8 +1,17 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
+// CameraInfo 인터페이스 정의
+interface CameraInfo {
+  deviceId: string
+  facingMode: 'environment' | 'user'
+  isAndroid: boolean
+  width: number
+  height: number
+}
+
 export const useFilterStore = defineStore('filter', () => {
-  const selectedCamera = ref(null)
+  const selectedCamera = ref<CameraInfo | null>(null)
   const selectedBackground = ref(0)
   const selectedCharacter = ref(0)
   const selectedText = ref('')
@@ -23,7 +32,7 @@ export const useFilterStore = defineStore('filter', () => {
     { id: 12, name: '하늘이 말풍선', type: 'patmal' }
   ])
 
-  const setCamera = (camera: any) => {
+  const setCamera = (camera: CameraInfo) => {
     selectedCamera.value = camera
   }
 
@@ -44,7 +53,7 @@ export const useFilterStore = defineStore('filter', () => {
     selectedBackground,
     selectedCharacter,
     selectedText,
-    characters,  // characters 추가
+    characters,
     setCamera,
     setBackground,
     setCharacter,

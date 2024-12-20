@@ -447,7 +447,7 @@ const drawTextOnBubble = (ctx: CanvasRenderingContext2D, text: string, x: number
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   
-  // 텍스트 줄바꿈 처리
+  // 텍스��� 줄바꿈 처리
   const words = text.split('')
   let line = ''
   let lines = []
@@ -511,7 +511,6 @@ onUnmounted(() => {
         autoplay 
         playsinline
         muted
-        :style="{ transform: store.selectedCamera?.facingMode === 'environment' ? 'scaleX(1)' : 'scaleX(-1)' }"
       ></video>
       <canvas 
         ref="canvasRef"
@@ -519,14 +518,8 @@ onUnmounted(() => {
     </div>
 
     <div class="bottom-controls">
-      <div class="control-button preview-button">
-        <span class="material-icons">photo_library</span>
-      </div>
       <div class="capture-button" @click="saveImage">
         <div class="inner-circle"></div>
-      </div>
-      <div class="control-button switch-button">
-        <span class="material-icons">flip_camera_ios</span>
       </div>
     </div>
   </div>
@@ -603,22 +596,6 @@ video {
   justify-content: space-around;
   align-items: center;
   background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
-}
-
-.control-button {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  cursor: pointer;
-}
-
-.control-button:active {
-  background: rgba(255,255,255,0.4);
 }
 
 .capture-button {
