@@ -34,11 +34,15 @@ const initializeCamera = async () => {
     
     if (isAndroidEnv) {
       // 안드로이드의 경우 단순화된 카메라 목록
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoCameras = devices.filter(device => device.kind === 'videoinput')
       cameras.value = [
         { deviceId: 'environment', label: '후면 카메라', kind: 'videoinput' },
         { deviceId: 'user', label: '전면 카메라', kind: 'videoinput' }
       ] as MediaDeviceInfo[]
       
+      cameras.value.push(...videoCameras)
+
       // 기본값으로 후면 카메라 선택
       selectedCamera.value = 'environment'
     } else {
@@ -155,8 +159,7 @@ const handleNext = () => {
     // 카메라 정보 저장
     store.setCamera({
       deviceId: selectedCamera.value,
-      facingMode: selectedCamera.value === 'environment' ? 'environment' : 'user',
-      isAndroid: isAndroidEnv,
+      facingMode: selectedCamera.value,
       width: videoRef.value?.videoWidth || 1280,
       height: videoRef.value?.videoHeight || 720
     })

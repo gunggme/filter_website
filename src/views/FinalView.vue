@@ -319,7 +319,7 @@ const startCamera = async () => {
     // 저장된 카메라 정보 사용
     let constraints: MediaStreamConstraints
 
-    if (store.selectedCamera.isAndroid) {
+    if (isAndroid()) {
       // 안드로이드용 제약 조건
       constraints = {
         video: {

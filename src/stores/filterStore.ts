@@ -4,8 +4,7 @@ import { defineStore } from 'pinia'
 // CameraInfo 인터페이스 정의
 interface CameraInfo {
   deviceId: string
-  facingMode: 'environment' | 'user'
-  isAndroid: boolean
+  facingMode: string
   width: number
   height: number
 }
