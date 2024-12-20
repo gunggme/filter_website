@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFilterStore } from '@/stores/filterStore'
 
@@ -18,29 +18,74 @@ interface TextCategory {
 const categories = ref<TextCategory[]>([
   {
     id: 1,
-    name: '인사말',
+    name: '아버지',
     texts: [
-      { id: 1, content: '안녕하세요!' },
-      { id: 2, content: '반갑습니다!' },
-      { id: 3, content: '좋은 하루 되세요!' }
+      { id: 1, content: '우리집의 든든한 기둥 아빠!! 사랑합니다.' },
+      { id: 2, content: '아버지는 언제나 저의 영웅입니다.' },
+      { id: 3, content: '저의 최고의 선물은 아버지입니다.' }
     ]
   },
   {
     id: 2,
-    name: '축하',
+    name: '어머니',
     texts: [
-      { id: 4, content: '축하합니다!' },
-      { id: 5, content: '멋져요!' },
-      { id: 6, content: '최고예요!' }
+      { id: 4, content: '정성으로 우리를 돌봐주시는 엄마!! 사랑합니다.' },
+      { id: 5, content: '우리 엄마여서 고마워요. 사랑해요^^' },
+      { id: 6, content: '엄마!! 낳아주시고 키워주셔서 감사해요.' }
     ]
   },
   {
     id: 3,
-    name: '응원',
+    name: '자녀',
     texts: [
-      { id: 7, content: '힘내세요!' },
-      { id: 8, content: '할 수 있어요!' },
-      { id: 9, content: '파이팅!' }
+      { id: 7, content: '우리 딸 사랑해~딸이 있어 언제나 행복해^^' },
+      { id: 8, content: '우리 아들 사랑해~아들이 있어 언제나 행복해^^' },
+      { id: 9, content: '우리 가족 언제나 행복하자!! 사랑한다.' }
+    ]
+  },
+  {
+    id: 4,
+    name: '할머니',
+    texts: [
+      { id: 10, content: '조건 없는 사랑을 주시는 할머니!! 존경합니다.' },
+      { id: 11, content: '늘 건강하세요. 사랑해요 할머니~' },
+      { id: 12, content: '할머니 보고싶어요. 전화할께요~' }
+    ]
+  },
+  {
+    id: 5,
+    name: '할아버지',
+    texts: [
+      { id: 13, content: '열심히 살아오신 세월을 존경합니다. 할아버지!!' },
+      { id: 14, content: '늘 건강하세요. 사랑해요 할아버지~' },
+      { id: 15, content: '할아버지 보고싶어요. 전화할께요~' }
+    ]
+  },
+  {
+    id: 6,
+    name: '손자',
+    texts: [
+      { id: 16, content: '우리 손자 손녀가 나의 보물이다. 사랑한다.' },
+      { id: 17, content: '아프지 말고 쑥쑥 크자!' },
+      { id: 18, content: '우린 언제나 너희 편이다. 화이팅!!' }
+    ]
+  },
+  {
+    id: 7,
+    name: '부부',
+    texts: [
+      { id: 19, content: '여보 사랑해요~' },
+      { id: 20, content: '당신과 함께한 모든 순간이 소중해' },
+      { id: 21, content: '내 인생의 동반자가 되줘서 고마워' }
+    ]
+  },
+  {
+    id: 8,
+    name: '기념일',
+    texts: [
+      { id: 22, content: '생신 축하드려요~ 행복한 하루 보내세요^^' },
+      { id: 23, content: '오늘이 가장 젊은날!! 생신 축하드리고 행복하세요^^' },
+      { id: 24, content: '언제나 신혼부부 같으신 어머니, 아버지~ 결혼 기념일 축하드려요^^' }
     ]
   }
 ])
@@ -57,6 +102,21 @@ const selectText = (textId: number) => {
   store.setText(String(textId))
   router.push('/final')
 }
+
+// 컴포넌트 마운트 시 캐릭터 타입 체크
+onMounted(() => {
+  const characterId = store.selectedCharacter
+  if (!characterId) {
+    router.push('/character')
+    return
+  }
+
+  // characters 배열에서 선택된 캐릭터 찾기
+  const selectedChar = store.characters.find(char => char.id === characterId)
+  if (!selectedChar || selectedChar.type !== 'patmal') {
+    router.push('/character')
+  }
+})
 </script>
 
 <template>

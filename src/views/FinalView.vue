@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { SelfieSegmentation } from '@mediapipe/selfie_segmentation'
 import { FaceMesh } from '@mediapipe/face_mesh'
 import { Camera } from '@mediapipe/camera_utils'
 import { useFilterStore } from '@/stores/filterStore'
+
+const store = useFilterStore()
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -17,8 +19,6 @@ let previousFace: any = null
 const smoothingFactor = 0.2
 let lastProcessTime = 0
 const processInterval = 1000 / 30
-
-const store = useFilterStore()
 
 // backgroundImages와 characterImages 객체를 Record 타입으로 정의
 const backgroundImages: Record<number, () => Promise<typeof import('*.png')>> = {
@@ -209,42 +209,40 @@ const onResults = (results: any) => {
       // 합성
       ctx.drawImage(tempCanvas, 0, 0)
 
-      // 얼굴이 인식된 경우 캐릭터 그리기
+      // 얼굴이 인식된 경우 캐릭터와 텍스트 그리기
       if (faces.length > 0 && characterImageRef.value) {
         faces.forEach(face => {
           const box = face.boundingBox
           const x = box.xCenter * width
           const y = (box.yCenter - box.height * 0.1) * height
           
-          // 세로 모드 기준으로 캐릭터 크기 조정
-          const screenRatio = window.innerHeight / window.innerWidth
           const characterWidth = width * 0.8
           const characterHeight = (characterWidth / characterImageRef.value!.width) * characterImageRef.value!.height
+          const characterX = x - characterWidth / 2
+          const characterY = y - characterHeight * 0.5
 
-          // 캐릭터가 화면 상단에 위치하도록 y 위치 조정
-          const adjustedY = y - characterHeight * 0.4
-
+          // 캐릭터 그리기
           ctx.drawImage(
             characterImageRef.value!,
-            x - characterWidth / 2,
-            adjustedY,
+            characterX,
+            characterY,
             characterWidth,
             characterHeight
           )
+
+          // 말풍선 캐릭터인 경우 텍스트 그리기
+          const selectedChar = store.characters.find(char => char.id === store.selectedCharacter)
+          if (selectedChar?.type === 'patmal' && getSelectedText.value) {
+            // 말풍선 영역 계산 (캐릭터 이미지의 상단 부분)
+            const bubbleX = x
+            const bubbleY = characterY + characterHeight * 0.8
+            const bubbleWidth = characterWidth * 0.6
+
+            // 텍스트 그리기
+            drawTextOnBubble(ctx, getSelectedText.value, bubbleX, bubbleY, bubbleWidth)
+          }
         })
       }
-    }
-
-    // 텍스트 표시
-    if (store.selectedText) {
-      ctx.font = '32px Arial'
-      ctx.fillStyle = 'white'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'bottom'
-      ctx.strokeStyle = 'black'
-      ctx.lineWidth = 4
-      ctx.strokeText(store.selectedText, width / 2, height - 30)
-      ctx.fillText(store.selectedText, width / 2, height - 30)
     }
   } catch (error) {
     console.error('결과 처리 오류:', error)
@@ -405,6 +403,78 @@ const stopCamera = () => {
     tracks.forEach(track => track.stop())
     videoRef.value.srcObject = null
   }
+}
+
+// 문구 데이터 가져오기
+const getSelectedText = computed(() => {
+  const textId = Number(store.selectedText)
+  const allTexts = [
+    '우리집의 든든한 기둥 아빠!! 사랑합니다.',
+    '아버지는 언제나 저의 영웅입니다.',
+    '저의 최고의 선물은 아버지입니다.',
+    '정성으로 우리를 돌봐주시는 엄마!! 사랑합니다.',
+    '우리 엄마여서 고마워요. 사랑해요^^',
+    '엄마!! 낳아주시고 키워주셔서 감사해요.',
+    '우리 딸 사랑해~딸이 있어 언제나 행복해^^',
+    '우리 아들 사랑해~아들이 있어 언제나 행복해^^',
+    '우리 가족 언제나 행복하자!! 사랑한다.',
+    '조건 없는 사랑을 주시는 할머니!! 존경합니다.',
+    '늘 건강하세요. 사랑해요 할머니~',
+    '할머니 보고싶어요. 전화할께요~',
+    '열심히 살아오신 세월을 존경합니다. 할아버지!!',
+    '늘 건강하세요. 사랑해요 할아버지~',
+    '할아버지 보고싶어요. 전화할께요~',
+    '우리 손자 손녀가 나의 보물이다. 사랑한다.',
+    '아프지 말고 쑥쑥 크자!',
+    '우린 언제나 너희 편이다. 화이팅!!',
+    '여보 사랑해요~',
+    '당신과 함께한 모든 순간이 소중해',
+    '내 인생의 동반자가 되줘서 고마워',
+    '생신 축하드려요~ 행복한 하루 보내세요^^',
+    '오늘이 가장 젊은날!! 생신 축하드리고 행복하세요^^',
+    '언제나 신혼부부 같으신 어머니, 아버지~ 결혼 기념일 축하드려요^^'
+  ]
+  return textId > 0 && textId <= allTexts.length ? allTexts[textId - 1] : ''
+})
+
+// 말풍선에 텍스트 그리기
+const drawTextOnBubble = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number) => {
+  ctx.save()
+  
+  // 텍스트 스타일 설정
+  ctx.font = '24px Arial'
+  ctx.fillStyle = '#000000'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  
+  // 텍스트 줄바꿈 처리
+  const words = text.split('')
+  let line = ''
+  let lines = []
+  const lineHeight = 30
+  
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n]
+    const metrics = ctx.measureText(testLine)
+    const testWidth = metrics.width
+    
+    if (testWidth > maxWidth && n > 0) {
+      lines.push(line)
+      line = words[n]
+    } else {
+      line = testLine
+    }
+  }
+  lines.push(line)
+  
+  // 텍스트 그리기
+  let posY = y - ((lines.length - 1) * lineHeight) / 2
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], x, posY)
+    posY += lineHeight
+  }
+  
+  ctx.restore()
 }
 
 onMounted(async () => {
@@ -587,7 +657,7 @@ video {
   }
 }
 
-/* 노치 디스플레이 대응 */
+/* 노치 디스플레이 응 */
 @supports (padding-top: env(safe-area-inset-top)) {
   .top-controls {
     padding-top: calc(16px + env(safe-area-inset-top));

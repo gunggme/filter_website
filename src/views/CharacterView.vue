@@ -19,18 +19,18 @@ const router = useRouter()
 const store = useFilterStore()
 
 const characters = ref([
-  { id: 1, name: '캐릭터1', url: char1 },
-  { id: 2, name: '캐릭터2', url: char2 },
-  { id: 3, name: '캐릭터3', url: char3 },
-  { id: 4, name: '캐릭터4', url: char4 },
-  { id: 5, name: '캐릭터5', url: char5 },
-  { id: 6, name: '캐릭터6', url: char6 },
-  { id: 7, name: '캐릭터7', url: char7 },
-  { id: 8, name: '캐릭터8', url: char8 },
-  { id: 9, name: '캐릭터9', url: char9 },
-  { id: 10, name: '캐릭터10', url: char10 },
-  { id: 11, name: '캐릭터11', url: char11 },
-  { id: 12, name: '캐릭터12', url: char12 }
+  { id: 1, name: '다람이', url: char1, type: 'normal' },
+  { id: 2, name: '다람이 말풍선', url: char2, type: 'patmal' },
+  { id: 3, name: '바람이', url: char3, type: 'normal' },
+  { id: 4, name: '바람이 말풍선', url: char4, type: 'patmal' },
+  { id: 5, name: '바람이 한복', url: char5, type: 'normal' },
+  { id: 6, name: '바람이 한복 말풍선', url: char6, type: 'patmal' },
+  { id: 7, name: '바람이 슈퍼맨', url: char7, type: 'normal' },
+  { id: 8, name: '아람이', url: char8, type: 'normal' },
+  { id: 9, name: '아람이 하트', url: char9, type: 'normal' },
+  { id: 10, name: '아람이 말풍선', url: char10, type: 'patmal' },
+  { id: 11, name: '하늘이', url: char11, type: 'normal' },
+  { id: 12, name: '하늘이 말풍선', url: char12, type: 'patmal' }
 ])
 
 const selectedCharacter = ref(store.selectedCharacter)
@@ -38,7 +38,13 @@ const selectedCharacter = ref(store.selectedCharacter)
 const selectCharacter = (characterId: number) => {
   selectedCharacter.value = characterId
   store.setCharacter(characterId)
-  router.push('/text')
+  
+  const selectedChar = characters.value.find(char => char.id === characterId)
+  if (selectedChar?.type === 'patmal') {
+    router.push('/text')
+  } else {
+    router.push('/final')
+  }
 }
 </script>
 
@@ -55,7 +61,7 @@ const selectCharacter = (characterId: number) => {
         @click="selectCharacter(char.id)"
       >
         <img :src="char.url" :alt="char.name">
-        <span>{{ char.name }}</span>
+        <span class="character-name">{{ char.name }}</span>
       </div>
     </div>
   </div>
@@ -94,7 +100,7 @@ const selectCharacter = (characterId: number) => {
   object-fit: contain;
 }
 
-.character-item span {
+.character-name {
   position: absolute;
   bottom: 0;
   left: 0;
