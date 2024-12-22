@@ -10,5 +10,12 @@
     {
       "path": "./tsconfig.vitest.json"
     }
-  ]
+  ],
+  "compilerOptions": {
+    "verbatimModuleSyntax": false,
+    "types": [
+      "@mediapipe/face_mesh",
+      "@mediapipe/camera_utils"
+    ]
+  }
 }

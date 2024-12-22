@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { SelfieSegmentation } from '@mediapipe/selfie_segmentation'
 import { FaceMesh } from '@mediapipe/face_mesh'
+import type { Results } from '@mediapipe/face_mesh'
 import { Camera } from '@mediapipe/camera_utils'
 import { useFilterStore } from '@/stores/filterStore'
 
@@ -43,77 +44,92 @@ const characterImages: Record<number, () => Promise<typeof import('*.png')>> = {
   12: () => import('@/assets/characters/sky_patmal_panel.png')
 }
 
+// 직접 타입 정의하는 방법
+interface FaceMeshResults {
+  multiFaceLandmarks?: Array<Array<{
+    x: number;
+    y: number;
+    z: number;
+  }>>;
+  image: HTMLVideoElement | HTMLImageElement;
+}
+
 // Face Mesh 초기화
 const initializeFaceMesh = async () => {
   faceMesh = new FaceMesh({
     locateFile: (file) => {
-      return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/${file}`
+      return `/mediapipe/face_mesh/${file}`
     }
   })
 
   faceMesh.setOptions({
     maxNumFaces: 1,
-    refineLandmarks: true,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7,
-    selfieMode: true
+    refineLandmarks: false,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5,
   })
 
-  faceMesh.onResults((results: any) => {
-    const now = Date.now()
-    if (now - lastProcessTime < processInterval) return
-    lastProcessTime = now
+  faceMesh.onResults((results: FaceMeshResults) => {
+    try {
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const landmarks = results.multiFaceLandmarks[0]
+        
+        // 얼굴 바운딩 박스 계산
+        let minX = 1, minY = 1, maxX = 0, maxY = 0
+        landmarks.forEach((landmark: any) => {
+          const x = 1 - landmark.x
+          minX = Math.min(minX, x)
+          minY = Math.min(minY, landmark.y)
+          maxX = Math.max(maxX, x)
+          maxY = Math.max(maxY, landmark.y)
+        })
 
-    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-      const landmarks = results.multiFaceLandmarks[0]
-      
-      // 얼굴 바운딩 박스 계산
-      let minX = 1, minY = 1, maxX = 0, maxY = 0
-      landmarks.forEach((landmark: any) => {
-        minX = Math.min(minX, landmark.x)
-        minY = Math.min(minY, landmark.y)
-        maxX = Math.max(maxX, landmark.x)
-        maxY = Math.max(maxY, landmark.y)
-      })
-
-      const currentFace = {
-        boundingBox: {
-          xCenter: (minX + maxX) / 2,
-          yCenter: (minY + maxY) / 2,
-          width: maxX - minX,
-          height: maxY - minY
+        const currentFace = {
+          boundingBox: {
+            xCenter: (minX + maxX) / 2,
+            yCenter: (minY + maxY) / 2,
+            width: maxX - minX,
+            height: maxY - minY
+          }
         }
-      }
 
-      if (previousFace) {
-        // 이전 프레임과 현재 프레임 사이의 보간
-        currentFace.boundingBox.xCenter = 
-          previousFace.boundingBox.xCenter * (1 - smoothingFactor) + 
-          currentFace.boundingBox.xCenter * smoothingFactor
+        if (previousFace) {
+          // 이전 프레임과 현재 프레임 사이의 보간
+          currentFace.boundingBox.xCenter = 
+            previousFace.boundingBox.xCenter * (1 - smoothingFactor) + 
+            currentFace.boundingBox.xCenter * smoothingFactor
+          
+          currentFace.boundingBox.yCenter = 
+            previousFace.boundingBox.yCenter * (1 - smoothingFactor) + 
+            currentFace.boundingBox.yCenter * smoothingFactor
+          
+          currentFace.boundingBox.width = 
+            previousFace.boundingBox.width * (1 - smoothingFactor) + 
+            currentFace.boundingBox.width * smoothingFactor
+          
+          currentFace.boundingBox.height = 
+            previousFace.boundingBox.height * (1 - smoothingFactor) + 
+            currentFace.boundingBox.height * smoothingFactor
+        }
         
-        currentFace.boundingBox.yCenter = 
-          previousFace.boundingBox.yCenter * (1 - smoothingFactor) + 
-          currentFace.boundingBox.yCenter * smoothingFactor
-        
-        currentFace.boundingBox.width = 
-          previousFace.boundingBox.width * (1 - smoothingFactor) + 
-          currentFace.boundingBox.width * smoothingFactor
-        
-        currentFace.boundingBox.height = 
-          previousFace.boundingBox.height * (1 - smoothingFactor) + 
-          currentFace.boundingBox.height * smoothingFactor
+        faces = [currentFace]
+        previousFace = {...currentFace}
+      } else if (previousFace) {
+        faces = [previousFace]
+      } else {
+        faces = []
       }
-      
-      faces = [currentFace]
-      previousFace = {...currentFace}
-    } else if (previousFace) {
-      faces = [previousFace]
-    } else {
-      faces = []
+    } catch (error) {
+      console.warn('Face mesh 처리 중 오류:', error)
     }
   })
 
-  await faceMesh.initialize()
+  try {
+    await faceMesh.initialize()
+  } catch (error) {
+    console.error('Face mesh 초기화 실패:', error)
+    throw error
+  }
 }
 
 // 이미지 압축
@@ -181,7 +197,10 @@ const onResults = (results: any) => {
   if (!canvasRef.value || !backgroundImageRef.value) return
 
   const canvas = canvasRef.value
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d', { 
+    alpha: true,
+    willReadFrequently: true
+  })
   if (!ctx) return
 
   const width = canvas.width
@@ -190,26 +209,51 @@ const onResults = (results: any) => {
   try {
     ctx.clearRect(0, 0, width, height)
     
-    // 배경 이미지 그리기
-    ctx.drawImage(backgroundImageRef.value, 0, 0, width, height)
-
     if (results.segmentationMask) {
-      // 임시 캔버스 생성
-      const tempCanvas = document.createElement('canvas')
-      tempCanvas.width = width
-      tempCanvas.height = height
-      const tempCtx = tempCanvas.getContext('2d')
-      if (!tempCtx) return
+      // 임시 캔버스들 생성
+      const maskCanvas = document.createElement('canvas')
+      const personCanvas = document.createElement('canvas')
+      maskCanvas.width = width
+      maskCanvas.height = height
+      personCanvas.width = width
+      personCanvas.height = height
+      
+      const maskCtx = maskCanvas.getContext('2d', { alpha: true })
+      const personCtx = personCanvas.getContext('2d', { alpha: true })
+      if (!maskCtx || !personCtx) return
 
+      // 먼저 배경 이미지 그리기
+      ctx.drawImage(backgroundImageRef.value, 0, 0, width, height)
+
+      // 마스크 처리
+      maskCtx.drawImage(results.segmentationMask, 0, 0, width, height)
+      maskCtx.filter = 'blur(3px)'
+      
+      // 사람 이미지 처리
+      personCtx.filter = 'contrast(1.1) saturate(1.2)'
+      personCtx.drawImage(results.image, 0, 0, width, height)
+      
+      // 안티앨리어싱 적용
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      
+      // 사람 ��미지 합성
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.drawImage(personCanvas, 0, 0)
+      
       // 마스크 적용
-      tempCtx.drawImage(results.segmentationMask, 0, 0, width, height)
-      tempCtx.globalCompositeOperation = 'source-in'
-      tempCtx.drawImage(results.image, 0, 0, width, height)
+      ctx.globalCompositeOperation = 'destination-in'
+      ctx.drawImage(maskCanvas, 0, 0)
+      
+      // 엣지 블렌딩
+      ctx.globalCompositeOperation = 'destination-over'
+      ctx.drawImage(backgroundImageRef.value, 0, 0, width, height)
 
-      // 합성
-      ctx.drawImage(tempCanvas, 0, 0)
+      // 설정 초기화
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.filter = 'none'
 
-      // 얼굴이 인식된 경우 캐릭터와 텍스트 그리기
+      // 캐릭터 그리기
       if (faces.length > 0 && characterImageRef.value) {
         faces.forEach(face => {
           const box = face.boundingBox
@@ -221,6 +265,12 @@ const onResults = (results: any) => {
           const characterX = x - characterWidth / 2
           const characterY = y - characterHeight * 0.5
 
+          // 캐릭터 그리기 전 그림자 효과
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
+          ctx.shadowBlur = 10
+          ctx.shadowOffsetX = 5
+          ctx.shadowOffsetY = 5
+
           // 캐릭터 그리기
           ctx.drawImage(
             characterImageRef.value!,
@@ -230,17 +280,11 @@ const onResults = (results: any) => {
             characterHeight
           )
 
-          // 말풍선 캐릭터인 경우 텍스트 그리기
-          const selectedChar = store.characters.find(char => char.id === store.selectedCharacter)
-          if (selectedChar?.type === 'patmal' && getSelectedText.value) {
-            // 말풍선 영역 계산 (캐릭터 이미지의 상단 부분)
-            const bubbleX = x
-            const bubbleY = characterY + characterHeight * 0.8
-            const bubbleWidth = characterWidth * 0.6
-
-            // 텍스트 그리기
-            drawTextOnBubble(ctx, getSelectedText.value, bubbleX, bubbleY, bubbleWidth)
-          }
+          // 그림자 효과 초기화
+          ctx.shadowColor = 'transparent'
+          ctx.shadowBlur = 0
+          ctx.shadowOffsetX = 0
+          ctx.shadowOffsetY = 0
         })
       }
     }
@@ -253,17 +297,18 @@ const onResults = (results: any) => {
 const initializeSelfieSegmentation = async () => {
   selfieSegmentation = new SelfieSegmentation({
     locateFile: (file) => {
-      return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/${file}`
+      return `/mediapipe/selfie_segmentation/${file}`
     }
   })
 
   await selfieSegmentation.initialize()
 
-  selfieSegmentation.onResults(onResults)
   selfieSegmentation.setOptions({
-    modelSelection: 1,
-    selfieMode: true,
+    modelSelection: 1,  // 고품질 모델 사용
+    selfieMode: true
   })
+
+  selfieSegmentation.onResults(onResults)
 }
 
 // 배경 이미지 로드
@@ -345,12 +390,12 @@ const startCamera = async () => {
     if (videoRef.value) {
       videoRef.value.srcObject = stream
 
-      // 비디오 메타데이터가 로드되면 캔버스 크기를 설정합니다
+      // 디오 메타데이터가 로드되면 캔버스 크기를 설정합니다
       await new Promise((resolve) => {
         videoRef.value!.onloadedmetadata = () => {
           const { videoWidth, videoHeight } = videoRef.value!
           
-          // 화면 방향에 따른 캔버스 크기 조정
+          // 면 방향에 따른 캔버스 크기 조정
           if (window.innerHeight > window.innerWidth) {
             // 세로 모드
             canvasRef.value!.width = videoHeight
@@ -391,7 +436,7 @@ const startCamera = async () => {
     if (error instanceof DOMException && error.name === 'NotAllowedError') {
       alert('카메라 권한이 필요합니다. 설정에서 카메라 권한을 허용해주세요.')
     } else {
-      alert('카메라를 시작할 수 없습니다. 다시 시도해주세요.')
+      alert('카메라 시작할 수 없습니다. 다시 시도해주세요.')
     }
   }
 }
@@ -417,14 +462,14 @@ const getSelectedText = computed(() => {
     '엄마!! 낳아주시고 키워주셔서 감사해요.',
     '우리 딸 사랑해~딸이 있어 언제나 행복해^^',
     '우리 아들 사랑해~아들이 있어 언제나 행복해^^',
-    '우리 가족 언제나 행복하자!! 사랑한다.',
+    '우리 가족 언제나 행복하��!! 사랑한다.',
     '조건 없는 사랑을 주시는 할머니!! 존경합니다.',
     '늘 건강하세요. 사랑해요 할머니~',
     '할머니 보고싶어요. 전화할께요~',
     '열심히 살아오신 세월을 존경합니다. 할아버지!!',
     '늘 건강하세요. 사랑해요 할아버지~',
-    '할아버지 보고싶어요. 전화할께요~',
-    '우리 손자 손녀가 나의 보물이다. 사랑한다.',
+    '할아버 고어요. 전화할께요~',
+    '리 손 손녀가 나의 보물이다. 사랑한다.',
     '아프지 말고 쑥쑥 크자!',
     '우린 언제나 너희 편이다. 화이팅!!',
     '여보 사랑해요~',
@@ -447,7 +492,7 @@ const drawTextOnBubble = (ctx: CanvasRenderingContext2D, text: string, x: number
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   
-  // 텍스��� 줄바꿈 처리
+  // 텍스트 줄바꿈 처리
   const words = text.split('')
   let line = ''
   let lines = []
@@ -539,7 +584,7 @@ onUnmounted(() => {
 
 .top-controls {
   position: absolute;
-  top: 0;
+  top: env(safe-area-inset-top, 0);
   left: 0;
   right: 0;
   height: 60px;
@@ -550,28 +595,14 @@ onUnmounted(() => {
   background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
 }
 
-.back-button {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: none;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.back-button:active {
-  background: rgba(255,255,255,0.2);
-}
-
 .camera-view {
   flex: 1;
   position: relative;
   overflow: hidden;
   background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 video, canvas {
@@ -581,21 +612,25 @@ video, canvas {
   object-fit: cover;
 }
 
-video {
-  opacity: 0;
+/* 16:9 비율 강제 적용 */
+.camera-view::before {
+  content: '';
+  display: block;
+  padding-top: 177.78%; /* 16:9 세로 비율 (9/16 * 100) */
 }
 
 .bottom-controls {
   position: absolute;
-  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0);
   left: 0;
   right: 0;
   height: 120px;
   padding: 20px;
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
   background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+  z-index: 100;
 }
 
 .capture-button {
@@ -623,26 +658,34 @@ video {
   height: 85%;
 }
 
-/* 안드로이드 대응을 위한 추가 스타일 */
+/* 가로 모드 방지 */
 @media screen and (orientation: landscape) {
-  .bottom-controls {
-    right: 120px;
-    height: 100%;
-    width: 120px;
-    flex-direction: column;
-    background: linear-gradient(to left, rgba(0,0,0,0.5), transparent);
+  .camera-app {
+    /* 가로 모드에서도 세로 모드 유지 */
+    transform: rotate(-90deg);
+    transform-origin: left top;
+    width: 100vh;
+    height: 100vw;
+    position: absolute;
+    top: 100%;
+    left: 0;
   }
 }
 
-/* 노치 디스플레이 응 */
-@supports (padding-top: env(safe-area-inset-top)) {
-  .top-controls {
-    padding-top: calc(16px + env(safe-area-inset-top));
-    height: calc(60px + env(safe-area-inset-top));
-  }
+.back-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
 
-  .bottom-controls {
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
-  }
+.back-button:active {
+  background: rgba(255,255,255,0.2);
 }
 </style> 
