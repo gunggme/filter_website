@@ -21,6 +21,7 @@ import { RouterLink, RouterView } from 'vue-router'
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -30,15 +31,23 @@ html, body {
   background: #000;
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  position: fixed;
+}
+
+#app {
+  height: 100%;
+  width: 100%;
 }
 
 .app-container {
-  height: 100vh;
-  width: 100vw;
-  padding-top: var(--safe-area-inset-top);
-  padding-bottom: var(--safe-area-inset-bottom);
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
+  background: #000;
 }
 
 /* 공통 버튼 스타일 */
@@ -93,13 +102,14 @@ html, body {
 /* 가로 모드 방지 */
 @media screen and (orientation: landscape) {
   .app-container {
-    transform: rotate(-90deg);
-    transform-origin: left top;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    transform-origin: center center;
     width: 100vh;
     height: 100vw;
-    position: absolute;
-    top: 100%;
-    left: 0;
+    background: #000;
   }
 }
 </style>

@@ -34,17 +34,18 @@ const startCamera = async () => {
       constraints = {
         video: {
           facingMode: store.selectedCamera.facingMode,
-          // 안드로이드에서는 더 낮은 해상도로 시
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 0.5625 }
         }
       }
     } else {
       constraints = {
         video: {
           deviceId: { exact: store.selectedCamera.deviceId },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 0.5625 }
         }
       }
     }
@@ -82,7 +83,7 @@ const startCamera = async () => {
   } catch (error) {
     console.error('카메라 시작 실패:', error)
     if (error instanceof DOMException && error.name === 'NotAllowedError') {
-      alert('카메라 권한이 필요합니다. 설정에서 카메라 권한을 허용해주세요.')
+      alert('카메라 권한이 필요합니다. 설정���서 카메라 권한을 허용해주세요.')
     } else {
       alert('카메라를 시작할 수 없습니다. 다시 시도해주세요.')
     }
@@ -237,26 +238,28 @@ onUnmounted(() => {
 
 .camera-view {
   width: 100%;
-  height: 100%;
+  height: 0;
+  padding-bottom: 177.78%; /* 16:9 비율을 위한 패딩 (9/16 * 100) */
   position: relative;
   background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 video {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 canvas {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .bottom-controls {

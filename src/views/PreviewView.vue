@@ -197,12 +197,12 @@ const processImage = async (applyBackground: boolean = false) => {
             const faceCenterX = (minX + maxX) / 2 * canvas.width
             const faceCenterY = (minY + maxY) / 2 * canvas.height
 
-            // 캐릭터 이미지 로드 및 배치
+            // ��릭터 이미지 로드 및 배치
             const charImage = new Image()
             charImage.src = characterImages[store.selectedCharacter]
             charImage.onload = () => {
               // 캐릭터 크기 계산 (얼굴 크기 기준)
-              const charWidth = faceWidth * 3 * characterScale.value // 얼굴 크기의 3배로 조정
+              const charWidth = faceWidth * 5 * characterScale.value // 얼굴 크기의 3배로 조정
               const charHeight = (charWidth / charImage.width) * charImage.height
 
               // 캐릭터 위치 계산 (얼굴이 프레임 안에 오도록)
@@ -352,9 +352,10 @@ const selectBackground = async (backgroundId: number) => {
 
 <template>
   <div class="preview-screen">
+    <!-- 메인 프리뷰 영역 -->
     <div class="preview-container">
       <img 
-        v-if="processedImage && !isLoading" 
+        v-if="processedImage" 
         :src="processedImage" 
         alt="Processed photo"
         class="preview-image"
@@ -364,82 +365,84 @@ const selectBackground = async (backgroundId: number) => {
         @touchstart="startDrag"
         @touchmove="onDrag"
         @touchend="endDrag"
+      />
+
+      <!-- 상단 편집 도구 -->
+      <div class="top-controls">
+        <div class="edit-buttons">
+          <button 
+            :class="['edit-button', { active: editMode === 'background' }]"
+            @click="editMode = 'background'"
+          >
+            배경 선택
+          </button>
+          <button 
+            :class="['edit-button', { active: editMode === 'character' }]"
+            @click="editMode = 'character'"
+          >
+            캐릭터 선택
+          </button>
+        </div>
+
+        <!-- 크기 조절 컨트롤 -->
+        <div v-if="selectedCharacter" class="scale-controls">
+          <button class="scale-button" @click="adjustScale(-0.1)">-</button>
+          <span class="scale-value">{{ Math.round(characterScale * 100) }}%</span>
+          <button class="scale-button" @click="adjustScale(0.1)">+</button>
+        </div>
+      </div>
+
+      <!-- 선택기 패널 -->
+      <div 
+        v-if="editMode === 'background'" 
+        class="selector-panel"
       >
+        <div 
+          v-for="bg in backgrounds" 
+          :key="bg.id"
+          :class="['selector-item', { selected: store.selectedBackground === bg.id }]"
+          @click="selectBackground(bg.id)"
+        >
+          <img :src="bg.url" :alt="bg.name">
+        </div>
+      </div>
+
+      <div 
+        v-if="editMode === 'character'" 
+        class="selector-panel"
+      >
+        <div 
+          v-for="char in characters" 
+          :key="char.id"
+          :class="['selector-item', { selected: selectedCharacter === char.id }]"
+          @click="selectCharacter(char.id)"
+        >
+          <img :src="char.url" :alt="char.name">
+        </div>
+      </div>
+
+      <!-- 로딩 오버레이 -->
       <div v-if="isLoading" class="loading-overlay">
         <div class="loading-spinner"></div>
-        <div class="loading-text">이미지 처리 중...</div>
-      </div>
-    </div>
-    
-    <!-- 편집 모드 선택 -->
-    <div class="edit-mode-selector">
-      <button 
-        :class="{ active: editMode === 'background' }"
-        @click="editMode = 'background'"
-      >
-        배경 선택
-      </button>
-      <button 
-        :class="{ active: editMode === 'character' }"
-        @click="editMode = 'character'"
-      >
-        캐릭터 선택
-      </button>
-    </div>
-
-    <!-- 배경 선택기 -->
-    <div 
-      v-if="editMode === 'background'" 
-      class="selector-panel"
-    >
-      <div 
-        v-for="bg in backgrounds" 
-        :key="bg.id"
-        class="item"
-        :class="{ selected: store.selectedBackground === bg.id }"
-        @click="selectBackground(bg.id)"
-      >
-        <img :src="bg.url" :alt="bg.name">
+        <div class="loading-text">처리중...</div>
       </div>
     </div>
 
-    <!-- 캐릭터 선택기 -->
-    <div 
-      v-if="editMode === 'character'" 
-      class="selector-panel"
-    >
-      <div 
-        v-for="char in characters" 
-        :key="char.id"
-        class="item"
-        :class="{ selected: selectedCharacter === char.id }"
-        @click="selectCharacter(char.id)"
-      >
-        <img :src="char.url" :alt="char.name">
-      </div>
-    </div>
-
-    <!-- 크기 조절 컨트롤 -->
-    <div v-if="selectedCharacter" class="scale-controls">
-      <button @click="adjustScale(-0.1)">-</button>
-      <span>{{ Math.round(characterScale * 100) }}%</span>
-      <button @click="adjustScale(0.1)">+</button>
-    </div>
-    
-    <div class="preview-controls">
+    <!-- 하단 컨트롤 -->
+    <div class="bottom-controls">
       <button 
-        class="android-button secondary"
+        class="control-button secondary"
         @click="retake"
         :disabled="isLoading"
       >
-        다시 찍기
+        다시 촬영
       </button>
       <button 
-        class="android-button"
+        class="control-button primary"
         @click="confirm"
         :disabled="isLoading || !processedImage"
       >
-        완료
+        저장하기
       </button>
     </div>
   </div>
@@ -450,39 +453,94 @@ const selectBackground = async (backgroundId: number) => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: #000;
+  position: relative;
 }
 
 .preview-container {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .preview-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-/* 편집 모드 선택기 */
-.edit-mode-selector {
+/* 상단 컨트롤 */
+.top-controls {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  right: 16px;
+  top: env(safe-area-inset-top, 0);
+  left: 0;
+  right: 0;
+  padding: 16px;
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+  z-index: 10;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-button {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.edit-button.active {
+  background: var(--primary-color);
+}
+
+/* 크기 조절 컨트롤 */
+.scale-controls {
+  display: flex;
+  align-items: center;
   gap: 8px;
   padding: 8px;
   background: rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
-  z-index: 10;
+  border-radius: 4px;
+  align-self: flex-end;
+}
+
+.scale-button {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+}
+
+.scale-value {
+  min-width: 48px;
+  text-align: center;
+  color: white;
+  font-size: 14px;
 }
 
 /* 선택기 패널 */
 .selector-panel {
   position: absolute;
-  bottom: calc(76px + var(--safe-area-inset-bottom));
+  bottom: calc(76px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   height: 100px;
@@ -494,28 +552,61 @@ const selectBackground = async (backgroundId: number) => {
   z-index: 10;
 }
 
-/* 크기 조절 컨트롤 */
-.scale-controls {
-  position: absolute;
-  top: 80px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 8px;
+.selector-item {
+  flex: 0 0 80px;
+  height: 80px;
   border-radius: 8px;
-  z-index: 10;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.selector-item.selected {
+  border-color: var(--primary-color);
+}
+
+.selector-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* 하단 컨트롤 */
-.preview-controls {
+.bottom-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: 16px;
-  padding-bottom: calc(16px + var(--safe-area-inset-bottom));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
   display: flex;
   gap: 16px;
   background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
   z-index: 10;
+}
+
+.control-button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  color: white;
+}
+
+.control-button.primary {
+  background: var(--primary-color);
+}
+
+.control-button.secondary {
+  background: var(--secondary-color);
+}
+
+.control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 로딩 오버레이 */
@@ -533,5 +624,36 @@ const selectBackground = async (backgroundId: number) => {
   z-index: 20;
 }
 
-/* 나머지 스타일은 유지 */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-top: 16px;
+  color: white;
+  font-size: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 가로 모드 방지 */
+@media screen and (orientation: landscape) {
+  .preview-screen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    transform-origin: center center;
+    width: 100vh;
+    height: 100vw;
+    background: #000;
+  }
+}
 </style> 
