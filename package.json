@@ -14,7 +14,8 @@
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/face_mesh": "^0.4.1633559619",
-    "@mediapipe/selfie_segmentation": "^0.1.1632777926",
+    "@mediapipe/selfie_segmentation": "^0.1.1675465747",
+    "lodash": "^4.17.21",
     "pinia": "^2.3.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@tsconfig/node22": "^22.0.0",
     "@types/jsdom": "^21.1.7",
+    "@types/lodash": "^4.17.13",
     "@types/node": "^22.9.3",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vitejs/plugin-vue-jsx": "^4.1.1",

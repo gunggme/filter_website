@@ -164,7 +164,7 @@ const handleNext = () => {
       height: videoRef.value?.videoHeight || 720
     })
     stopCamera()
-    router.push('/background')
+    router.push('/final')
   }
 }
 

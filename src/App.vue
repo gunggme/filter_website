@@ -3,83 +3,103 @@ import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  <div class="android-app">
-    <div class="status-bar"></div>
-    <div class="app-content">
-      <router-view></router-view>
-    </div>
-    <div class="navigation-bar"></div>
+  <div class="app-container">
+    <router-view></router-view>
   </div>
 </template>
 
 <style>
+/* 전역 스타일 */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --primary-color: #6200EE;
+  --secondary-color: #757575;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
 }
 
-body {
-  font-family: Roboto, sans-serif;
-  background-color: #FFFFFF;
-  color: #212121;
-  overscroll-behavior: none;
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.android-app {
+.app-container {
   height: 100vh;
+  width: 100vw;
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: var(--safe-area-inset-bottom);
   display: flex;
   flex-direction: column;
 }
 
-.status-bar {
-  height: env(safe-area-inset-top, 24px);
-  background-color: #f5f5f5;
-}
-
-.app-content {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.navigation-bar {
-  height: env(safe-area-inset-bottom, 48px);
-  background-color: #f5f5f5;
-}
-
-/* 안드로이드 스타일 버튼 */
+/* 공통 버튼 스타일 */
 .android-button {
-  background-color: #6200EE;
-  color: white;
+  padding: 12px 24px;
   border: none;
   border-radius: 4px;
-  padding: 12px 24px;
+  background: var(--primary-color);
+  color: white;
   font-size: 16px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  elevation: 2;
   cursor: pointer;
+  transition: opacity 0.2s;
 }
 
-.android-button:active {
-  background-color: #3700B3;
+.android-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* 안드로이드 스타일 입력 필드 */
-.android-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
-  border-bottom: 1px solid #757575;
-  font-size: 16px;
-  background-color: transparent;
+.android-button.secondary {
+  background: var(--secondary-color);
 }
 
-.android-input:focus {
-  border-bottom: 2px solid #6200EE;
-  outline: none;
+/* 공통 헤더 스타일 */
+.screen-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 100;
+}
+
+/* 공통 컨테이너 스타일 */
+.screen-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 공통 하단 컨트롤 스타일 */
+.bottom-controls {
+  padding: 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  display: flex;
+  gap: 16px;
+}
+
+/* 가로 모드 방지 */
+@media screen and (orientation: landscape) {
+  .app-container {
+    transform: rotate(-90deg);
+    transform-origin: left top;
+    width: 100vh;
+    height: 100vw;
+    position: absolute;
+    top: 100%;
+    left: 0;
+  }
 }
 </style>
