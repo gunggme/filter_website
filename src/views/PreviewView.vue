@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useFilterStore } from '@/stores/filterStore'
 import { SelfieSegmentation } from '@mediapipe/selfie_segmentation'
@@ -15,6 +15,14 @@ import char1 from '@/assets/characters/daram_panel.png'
 import char2 from '@/assets/characters/daram_patmal_panel.png'
 import char3 from '@/assets/characters/wind_panel.png'
 import char4 from '@/assets/characters/wind_patmal_panel.png'
+import char5 from '@/assets/characters/wind_korean_trad_panel.png'
+import char6 from '@/assets/characters/wind_korean_trad_patmal_panel.png'
+import char7 from '@/assets/characters/wind_superman_panel.png'
+import char8 from '@/assets/characters/aram_panel.png'
+import char9 from '@/assets/characters/aram_heart_panel.png'
+import char10 from '@/assets/characters/aram_patmal_panel.png'
+import char11 from '@/assets/characters/sky_panel.png'
+import char12 from '@/assets/characters/sky_patmal_panel.png'
 
 const route = useRoute()
 const router = useRouter()
@@ -34,6 +42,14 @@ const characters = ref([
   { id: 2, name: '다람이 말풍선', url: char2 },
   { id: 3, name: '바람이', url: char3 },
   { id: 4, name: '바람이 말풍선', url: char4 },
+  { id: 5, name: '바람이 한복', url: char5 },
+  { id: 6, name: '바람이 한복 말풍선', url: char6 },
+  { id: 7, name: '바람이 슈퍼맨', url: char7 },
+  { id: 8, name: '아람이', url: char8 },
+  { id: 9, name: '아람이 하트', url: char9 },
+  { id: 10, name: '아람이 말풍선', url: char10 },
+  { id: 11, name: '하늘이', url: char11 },
+  { id: 12, name: '하늘이 말풍선', url: char12 }
 ])
 
 // characterImages 타입 정의 추가
@@ -47,6 +63,14 @@ const characterImages: CharacterImageMap = {
   2: char2,
   3: char3,
   4: char4,
+  5: char5,
+  6: char6,
+  7: char7,
+  8: char8,
+  9: char9,
+  10: char10,
+  11: char11,
+  12: char12
 }
 
 // backgroundImages 타입 수정 및 배경 처리 로직 수정
@@ -70,6 +94,101 @@ const isLoading = ref(false)
 
 let selfieSegmentation: SelfieSegmentation | null = null
 let faceMesh: FaceMesh | null = null
+
+// 새로운 상태 변수들 추가
+const showQRModal = ref(false)
+const qrImageData = ref('')
+const isUploading = ref(false)
+const uploadError = ref('')
+
+// 문구 관련 상태 추가
+const showTextEditor = ref(false)
+const customText = ref('')
+const selectedCategory = ref(1)
+
+// 텍스트 카테고리 데이터
+const categories = ref([
+  {
+    id: 1,
+    name: '아버지',
+    texts: [
+      { id: 1, content: '우리집의 든든한 기둥 아빠!! 사랑합니다.' },
+      { id: 2, content: '아버지는 언제나 저의 영웅입니다.' },
+      { id: 3, content: '저의 최고의 선물은 아버지입니다.' }
+    ]
+  },
+  {
+    id: 2,
+    name: '어머니',
+    texts: [
+      { id: 4, content: '정성으로 우리를 돌봐주시는 엄마!! 사랑합니다.' },
+      { id: 5, content: '우리 엄마여서 고마워요. 사랑해요^^' },
+      { id: 6, content: '엄마!! 낳아주시고 키워주셔서 감사해요.' }
+    ]
+  },
+  {
+    id: 3,
+    name: '자녀',
+    texts: [
+      { id: 7, content: '우리 딸 사랑해~딸이 있어 언제나 행복해^^' },
+      { id: 8, content: '우리 아들 사랑해~아들이 있어 언제나 행복해^^' },
+      { id: 9, content: '우리 가족 언제나 행복하자!! 사랑한다.' }
+    ]
+  },
+  {
+    id: 4,
+    name: '할머니',
+    texts: [
+      { id: 10, content: '조건 없는 사랑을 주시는 할머니!! 존경합니다.' },
+      { id: 11, content: '늘 건강하세요. 사랑해요 할머니~' },
+      { id: 12, content: '할머니 보고싶어요. 전화할께요~' }
+    ]
+  },
+  {
+    id: 5,
+    name: '할아버지',
+    texts: [
+      { id: 13, content: '열심히 살아오신 세월을 존경합니다. 할아버지!!' },
+      { id: 14, content: '늘 건강하세요. 사랑해요 할아버지~' },
+      { id: 15, content: '할아버지 보고싶어요. 전화할께요~' }
+    ]
+  },
+  {
+    id: 6,
+    name: '손자',
+    texts: [
+      { id: 16, content: '우리 손자 손녀가 나의 보물이다. 사랑한다.' },
+      { id: 17, content: '아프지 말고 쑥쑥 크자!' },
+      { id: 18, content: '우린 언제나 너희 편이다. 화이팅!!' }
+    ]
+  },
+  {
+    id: 7,
+    name: '부부',
+    texts: [
+      { id: 19, content: '여보 사랑해요~' },
+      { id: 20, content: '당신과 함께한 모든 순간이 소중해' },
+      { id: 21, content: '내 인생의 동반자가 되줘서 고마워' }
+    ]
+  },
+  {
+    id: 8,
+    name: '기념일',
+    texts: [
+      { id: 22, content: '생신 축하드려요~ 행복한 하루 보내세요^^' },
+      { id: 23, content: '오늘이 가장 젊은날!! 생신 축하드리고 행복하세요^^' },
+      { id: 24, content: '언제나 신혼부부 같으신 어머니, 아버지~ 결혼 기념일 축하드려요^^' }
+    ]
+  }
+])
+
+// 현재 선택된 카테고리의 텍스트들을 반환하는 computed 속성
+const currentTexts = computed(() => {
+  return categories.value.find(cat => cat.id === selectedCategory.value)?.texts || []
+})
+
+// 말풍선 캐릭터 ID 목록
+const patmalCharacterIds = [2, 4, 6, 10, 12]
 
 // MediaPipe 초기화
 const initializeMediaPipe = async () => {
@@ -197,12 +316,12 @@ const processImage = async (applyBackground: boolean = false) => {
             const faceCenterX = (minX + maxX) / 2 * canvas.width
             const faceCenterY = (minY + maxY) / 2 * canvas.height
 
-            // ��릭터 이미지 로드 및 배치
+            // 캐릭터 이미지 로드 및 배치
             const charImage = new Image()
             charImage.src = characterImages[store.selectedCharacter]
             charImage.onload = () => {
               // 캐릭터 크기 계산 (얼굴 크기 기준)
-              const charWidth = faceWidth * 5 * characterScale.value // 얼굴 크기의 3배로 조정
+              const charWidth = faceWidth * 5 * characterScale.value // 얼굴 크기의 5배로 조정
               const charHeight = (charWidth / charImage.width) * charImage.height
 
               // 캐릭터 위치 계산 (얼굴이 프레임 안에 오도록)
@@ -224,6 +343,48 @@ const processImage = async (applyBackground: boolean = false) => {
 
               // 캐릭터 그리기
               ctx.drawImage(charImage, adjustedX, adjustedY, charWidth, charHeight)
+
+              // 캐릭터 그리기 후에 텍스트 추가
+              if (customText.value && patmalCharacterIds.includes(store.selectedCharacter)) {
+                ctx.font = '32px KyoboHandwriting'
+                ctx.fillStyle = 'black'
+                ctx.textAlign = 'center'
+                
+                // 캐릭터 위치를 기준으로 텍스트 위치 계산
+                const textX = adjustedX + (charWidth / 2)
+                const textY = adjustedY + (charHeight * 0.8)
+                
+                // 텍스트 줄바꿈 처리
+                const maxWidth = charWidth * 0.8
+                const words = customText.value.split('')
+                let line = ''
+                let lines = []
+                let lineHeight = 40  // 줄 간격도 증가
+
+                for (let i = 0; i < words.length; i++) {
+                  const testLine = line + words[i]
+                  const metrics = ctx.measureText(testLine)
+                  const testWidth = metrics.width
+
+                  if (testWidth > maxWidth) {
+                    lines.push(line)
+                    line = words[i]
+                  } else {
+                    line = testLine
+                  }
+                }
+                lines.push(line)
+
+                // 여러 줄의 텍스트 그리기
+                lines.forEach((line, i) => {
+                  // 텍스트 외곽선 추가로 가독성 향상
+                  ctx.strokeStyle = 'white'
+                  ctx.lineWidth = 4
+                  ctx.strokeText(line, textX, textY + (i * lineHeight))
+                  ctx.fillText(line, textX, textY + (i * lineHeight))
+                })
+              }
+
               resolve(true)
             }
           } else {
@@ -295,13 +456,61 @@ const retake = () => {
   router.push('/final')
 }
 
-const confirm = () => {
-  // 처리된 이미지 저장
-  if (processedImage.value) {
-    const link = document.createElement('a')
-    link.download = 'processed_photo.jpg'
-    link.href = processedImage.value
-    link.click()
+const confirm = async () => {
+  if (!processedImage.value) return
+  
+  showQRModal.value = true  // 먼저 모달을 표시
+  isUploading.value = true
+  uploadError.value = ''
+  
+  try {
+    // 현재 캔버스의 최종 이미지(문구 포함)를 가져옴
+    const finalImage = processedImage.value
+    
+    // Base64 데이터를 Blob으로 변환
+    const base64Data = finalImage.split(',')[1]
+    const byteCharacters = atob(base64Data)
+    const byteNumbers = new Array(byteCharacters.length)
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: 'image/png' })
+    
+    // FormData 생성 및 파일 추가
+    const formData = new FormData()
+    formData.append('file', blob, 'photo.png')
+    
+    // 이미지 업로드 요청
+    const response = await fetch('http://34.29.113.34:8000/proxy/img', {
+      method: 'POST',
+      body: formData
+    })
+    
+    if (!response.ok) {
+      throw new Error('이미지 업로드 실패')
+    }
+    
+    // 응답으로 받은 이미지 데이터를 QR 코드로 표시
+    const imageBlob = await response.blob()
+    qrImageData.value = URL.createObjectURL(imageBlob)
+    
+  } catch (error) {
+    console.error('업로드 중 오류:', error)
+    uploadError.value = '이미지 업로드 중 오류가 발생했습니다.'
+  } finally {
+    isUploading.value = false
+  }
+}
+
+// QR 모달 닫기 함수
+const closeQRModal = () => {
+  showQRModal.value = false
+  if (qrImageData.value) {
+    URL.revokeObjectURL(qrImageData.value)
+    qrImageData.value = ''
   }
 }
 
@@ -309,6 +518,15 @@ const confirm = () => {
 const selectCharacter = async (characterId: number) => {
   selectedCharacter.value = characterId
   store.setCharacter(characterId)
+  
+  // 풍선 캐릭터인 경우 텍스트 에디터 표시
+  if (patmalCharacterIds.includes(characterId)) {
+    showTextEditor.value = true
+  } else {
+    showTextEditor.value = false
+    customText.value = ''
+  }
+  
   await processImage(store.selectedBackground !== null)
 }
 
@@ -348,6 +566,12 @@ const selectBackground = async (backgroundId: number) => {
   }
 }
 
+// 문구 설정 함수
+const setText = (text: string) => {
+  customText.value = text
+  processImage(store.selectedBackground !== null)
+}
+
 </script>
 
 <template>
@@ -367,8 +591,16 @@ const selectBackground = async (backgroundId: number) => {
         @touchend="endDrag"
       />
 
-      <!-- 상단 편집 도구 -->
-      <div class="top-controls">
+      <!-- 크기 조절 컨트롤 -->
+      <div v-if="selectedCharacter" class="scale-controls">
+        <button class="scale-button" @click="adjustScale(-0.1)">-</button>
+        <span class="scale-value">{{ Math.round(characterScale * 100) }}%</span>
+        <button class="scale-button" @click="adjustScale(0.1)">+</button>
+      </div>
+
+      <!-- 편집 버튼과 선택기 패널을 하나의 컨테이너로 묶음 -->
+      <div class="editor-container">
+        <!-- 편집 버튼 -->
         <div class="edit-buttons">
           <button 
             :class="['edit-button', { active: editMode === 'background' }]"
@@ -384,40 +616,60 @@ const selectBackground = async (backgroundId: number) => {
           </button>
         </div>
 
-        <!-- 크기 조절 컨트롤 -->
-        <div v-if="selectedCharacter" class="scale-controls">
-          <button class="scale-button" @click="adjustScale(-0.1)">-</button>
-          <span class="scale-value">{{ Math.round(characterScale * 100) }}%</span>
-          <button class="scale-button" @click="adjustScale(0.1)">+</button>
+        <!-- 문구 편집 패널 -->
+        <div v-if="showTextEditor" class="text-editor-panel">
+          <!-- 카테고리 선택 -->
+          <div class="category-select">
+            <button
+              v-for="category in categories"
+              :key="category.id"
+              :class="['category-button', { active: selectedCategory === category.id }]"
+              @click="selectedCategory = category.id"
+            >
+              {{ category.name }}
+            </button>
+          </div>
+          
+          <!-- 텍스트 선택 -->
+          <div class="text-options">
+            <button 
+              v-for="text in currentTexts"
+              :key="text.id"
+              :class="['text-option', { active: customText === text.content }]"
+              @click="setText(text.content)"
+            >
+              {{ text.content }}
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- 선택기 패널 -->
-      <div 
-        v-if="editMode === 'background'" 
-        class="selector-panel"
-      >
+        <!-- 선택기 패널 -->
         <div 
-          v-for="bg in backgrounds" 
-          :key="bg.id"
-          :class="['selector-item', { selected: store.selectedBackground === bg.id }]"
-          @click="selectBackground(bg.id)"
+          v-if="editMode === 'background'" 
+          class="selector-panel"
         >
-          <img :src="bg.url" :alt="bg.name">
+          <div 
+            v-for="bg in backgrounds" 
+            :key="bg.id"
+            :class="['selector-item', { selected: store.selectedBackground === bg.id }]"
+            @click="selectBackground(bg.id)"
+          >
+            <img :src="bg.url" :alt="bg.name">
+          </div>
         </div>
-      </div>
 
-      <div 
-        v-if="editMode === 'character'" 
-        class="selector-panel"
-      >
         <div 
-          v-for="char in characters" 
-          :key="char.id"
-          :class="['selector-item', { selected: selectedCharacter === char.id }]"
-          @click="selectCharacter(char.id)"
+          v-if="editMode === 'character'" 
+          class="selector-panel"
         >
-          <img :src="char.url" :alt="char.name">
+          <div 
+            v-for="char in characters" 
+            :key="char.id"
+            :class="['selector-item', { selected: selectedCharacter === char.id }]"
+            @click="selectCharacter(char.id)"
+          >
+            <img :src="char.url" :alt="char.name">
+          </div>
         </div>
       </div>
 
@@ -444,6 +696,24 @@ const selectBackground = async (backgroundId: number) => {
       >
         저장하기
       </button>
+    </div>
+
+    <!-- QR 코드 모달 -->
+    <div v-if="showQRModal" class="qr-modal">
+      <div class="qr-modal-content">
+        <template v-if="isUploading">
+          <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">QR 코드 생성 중...</p>
+          </div>
+        </template>
+        <template v-else>
+          <h3>QR 코드</h3>
+          <img v-if="qrImageData" :src="qrImageData" alt="QR Code" class="qr-image">
+          <p v-if="uploadError" class="error-message">{{ uploadError }}</p>
+          <button class="close-button" @click="closeQRModal">닫기</button>
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -475,49 +745,17 @@ const selectBackground = async (backgroundId: number) => {
   left: 0;
 }
 
-/* 상단 컨트롤 */
-.top-controls {
-  position: absolute;
-  top: env(safe-area-inset-top, 0);
-  left: 0;
-  right: 0;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
-  z-index: 10;
-}
-
-.edit-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.edit-button {
-  flex: 1;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.edit-button.active {
-  background: var(--primary-color);
-}
-
 /* 크기 조절 컨트롤 */
 .scale-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px;
   background: rgba(0, 0, 0, 0.5);
   border-radius: 4px;
-  align-self: flex-end;
 }
 
 .scale-button {
@@ -537,19 +775,48 @@ const selectBackground = async (backgroundId: number) => {
   font-size: 14px;
 }
 
-/* 선택기 패널 */
-.selector-panel {
+/* 편집�� 컨테이너 */
+.editor-container {
   position: absolute;
   bottom: calc(76px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 편집 버튼 */
+.edit-buttons {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.edit-button {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.edit-button.active {
+  background: var(--primary-color);
+}
+
+/* 선택기 패널 */
+.selector-panel {
   height: 100px;
   display: flex;
   gap: 8px;
   padding: 8px;
   overflow-x: auto;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 10;
 }
 
 .selector-item {
@@ -655,5 +922,153 @@ const selectBackground = async (backgroundId: number) => {
     height: 100vw;
     background: #000;
   }
+}
+
+/* QR 코드 모달 */
+.qr-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.qr-modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 90%;
+  width: 300px;
+}
+
+.qr-modal-content h3 {
+  margin: 0 0 16px 0;
+  color: #333;
+}
+
+.qr-image {
+  width: 200px;
+  height: 200px;
+  margin: 16px auto;
+  display: block;
+}
+
+.error-message {
+  color: red;
+  margin: 8px 0;
+}
+
+.close-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+.close-button:hover {
+  opacity: 0.9;
+}
+
+/* 문구 편집 패널 */
+.text-editor-panel {
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-select {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.category-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.category-button.active {
+  background: var(--primary-color);
+}
+
+.text-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.text-option {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  white-space: normal;
+  word-break: keep-all;
+  line-height: 1.4;
+}
+
+.text-option.active {
+  background: var(--primary-color);
+}
+
+/* QR 모달 로딩 스타일 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-top: 1rem;
+  color: #333;
+  font-size: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@font-face {
+  font-family: 'KyoboHandwriting';
+  src: url('@/assets/fonts/KyoboHandwriting2020pdy.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
 </style> 
