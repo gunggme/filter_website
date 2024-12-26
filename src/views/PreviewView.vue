@@ -84,8 +84,6 @@ const backgroundImages: Record<string | number, string> = {
 // 편집 모드 상태
 const editMode = ref<'background' | 'character'>('background')
 const selectedCharacter = ref<number | null>(null)
-const isDragging = ref(false)
-const dragPosition = ref({ x: 0, y: 0 })
 const characterScale = ref(1)
 
 const capturedImage = ref('')
@@ -190,15 +188,17 @@ const currentTexts = computed(() => {
 // 말풍선 캐릭터 ID 목록
 const patmalCharacterIds = [2, 4, 6, 10, 12]
 
-// 말풍선 캐릭터만 필터링하는 computed 속성 추가
+// 말풍선이 없는 캐릭터만 필터링하는 computed 속성으로 수정
 const filteredCharacters = computed(() => {
-  return characters.value.filter(char => patmalCharacterIds.includes(char.id))
+  return characters.value.filter(char => !patmalCharacterIds.includes(char.id))
 })
 
 // 캐릭터별 얼굴 위치 설정 타입 정의
 interface FacePosition {
   scale: number;
+  offsetX: number;
   offsetY: number;
+  rotate: number;
 }
 
 interface CharacterFacePositions {
@@ -206,11 +206,21 @@ interface CharacterFacePositions {
 }
 
 const characterFacePositions: CharacterFacePositions = {
-  2: { scale: 0.4, offsetY: 0.25 },  // 다람이 말풍선
-  4: { scale: 0.4, offsetY: 0.2 }, // 바람이 말풍선
-  6: { scale: 0.4, offsetY: 0.15 },  // 바람이 한복 말풍선
-  10: { scale: 0.4, offsetY: 0.25 }, // 아람이 말풍선
-  12: { scale: 0.4, offsetY: 0.2 }  // 하늘이 말풍선
+  // 일반 캐릭터
+  1: { scale: 0.45, offsetX: 0.48, offsetY: 0.3, rotate: 15 },  // 다람이
+  3: { scale: 0.42, offsetX: 0.54, offsetY: 0.26, rotate: 10 },  // 바람이
+  5: { scale: 0.37, offsetX: 0.54, offsetY: 0.3, rotate: 10 },  // 바람이 한복
+  7: { scale: 0.42, offsetX: 0.47, offsetY: 0.18, rotate: -5 },  // 바람이 슈퍼맨
+  8: { scale: 0.42, offsetX: 0.5, offsetY: 0.35, rotate: -3 },  // 아람이
+  9: { scale: 0.42, offsetX: 0.52, offsetY: 0.35, rotate: 14 },  // 아람이 하트
+  11: { scale: 0.42, offsetX: 0.43, offsetY: 0.3, rotate: -15 }, // 하늘이
+
+  // 말풍선 캐릭터
+  2: { scale: 0.3, offsetX: 0.5, offsetY: 0.15, rotate: 0 },   // 다람이 말풍선
+  4: { scale: 0.3, offsetX: 0.5, offsetY: 0.15, rotate: 0 },   // 바람이 말풍선
+  6: { scale: 0.3, offsetX: 0.5, offsetY: 0.15, rotate: 0 },   // 바람이 한복 말풍선
+  10: { scale: 0.3, offsetX: 0.5, offsetY: 0.15, rotate: 0 },  // 아람이 말풍선
+  12: { scale: 0.3, offsetX: 0.5, offsetY: 0.15, rotate: 0 }   // 하늘이 말풍선
 }
 
 // 캐릭터별 문구 스타일 설정
@@ -228,10 +238,20 @@ interface CharacterTextStyles {
 }
 
 const characterTextStyles: CharacterTextStyles = {
-  2: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },    // 다람이 말풍선
+  // 일반 캐릭터 (캐릭터 아래에 텍스트)
+  1: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 다람이
+  3: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 바람이
+  5: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
+  7: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
+  8: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 아람이
+  9: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
+  11: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 }, // 하늘이
+
+  // 말풍선 캐릭터 (말풍선 안에 텍스트)
+  2: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },   // 다람이 말풍선
   4: { fontSize: 32, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.8, lineHeight: 1.2, rotate: 0 },   // 바람이 말풍선
-  6: { fontSize: 30, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.75, lineHeight: 1.3, rotate: 0 },   // 바람이 한복 말풍선
-  10: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },   // 아람이 말풍선
+  6: { fontSize: 30, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.75, lineHeight: 1.3, rotate: 0 },  // 바람이 한복 말풍선
+  10: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },  // 아람이 말풍선
   12: { fontSize: 32, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.8, lineHeight: 1.2, rotate: 0 }   // 하늘이 말풍선
 }
 
@@ -345,24 +365,14 @@ const processImage = async (applyBackground: boolean = false) => {
       charImage.src = characterImages[store.selectedCharacter]
       await new Promise((resolve) => {
         charImage.onload = () => {
-          // 캐릭터 크기 계산 (기본 크기를 120%로 증가)
+          // 캐릭터 크기 계산 (기본 크기를 120%로 유지)
           charWidth = canvas.width * 1.2 * characterScale.value
           charHeight = (charWidth / charImage.width) * charImage.height
 
-          // 캐릭터 위치 계산 (중앙)
+          // 캐릭터 위치 계산 (항상 중앙)
           charX = (canvas.width - charWidth) / 2
           charY = (canvas.height - charHeight) / 2
 
-          // 드래그 중인 경우 위치 조정
-          if (isDragging.value) {
-            const offsetX = charWidth / 2
-            const offsetY = charHeight * 0.55
-            charX = dragPosition.value.x - offsetX
-            charY = dragPosition.value.y - offsetY
-          }
-
-          charX = Math.max(0, Math.min(charX, canvas.width - charWidth))
-          charY = Math.max(0, Math.min(charY, canvas.height - charHeight))
           resolve(true)
         }
       })
@@ -384,14 +394,16 @@ const processImage = async (applyBackground: boolean = false) => {
               maxY = Math.max(maxY, landmark.y)
             })
 
-            // 얼굴 영역 계산 (여유 공간 추가)
-            const padding = 0.3  // 패딩을 줄임
+            // 얼굴 영역 계산 (좌우 패딩을 더 크게 설정)
+            const paddingVertical = 0.3  // 상하 패딩
+            const paddingHorizontal = 0.5  // 좌우 패딩을 더 크게 설정
+            
             const faceWidth = (maxX - minX) * canvas.width
             const faceHeight = (maxY - minY) * canvas.height
-            const faceX = Math.max(0, minX * canvas.width - faceWidth * padding)
-            const faceY = Math.max(0, minY * canvas.height - faceHeight * padding)
-            const paddedWidth = faceWidth * (1 + padding * 2)
-            const paddedHeight = faceHeight * (1 + padding * 2)
+            const faceX = Math.max(0, minX * canvas.width - faceWidth * paddingHorizontal)
+            const faceY = Math.max(0, minY * canvas.height - faceHeight * paddingVertical)
+            const paddedWidth = faceWidth * (1 + paddingHorizontal * 2)
+            const paddedHeight = faceHeight * (1 + paddingVertical * 2)
 
             // 얼굴 영역만 추출
             const faceCanvas = document.createElement('canvas')
@@ -400,12 +412,12 @@ const processImage = async (applyBackground: boolean = false) => {
             const faceCtx = faceCanvas.getContext('2d')
             if (!faceCtx) return
 
-            // 얼굴 마스크 생성
+            // 얼굴 마스크 생성 (타원형을 좌우로 더 길게)
             faceCtx.beginPath()
             faceCtx.ellipse(
               paddedWidth / 2,
               paddedHeight / 2,
-              paddedWidth / 2.2,
+              paddedWidth / 2,  // x 반경을 더 크게 설정
               paddedHeight / 2.2,
               0,
               0,
@@ -422,18 +434,31 @@ const processImage = async (applyBackground: boolean = false) => {
             )
 
             // 얼굴을 캐릭터 구멍 위치에 맞춰 그리기
-            const characterPosition = characterFacePositions[store.selectedCharacter] || { scale: 0.5, offsetY: 0.3 }
+            const characterPosition = characterFacePositions[store.selectedCharacter] || { scale: 0.5, offsetX: 0.5, offsetY: 0.3, rotate: 0 }
             const targetWidth = charWidth * characterPosition.scale
             const targetHeight = (targetWidth / paddedWidth) * paddedHeight
-            const targetX = charX + (charWidth - targetWidth) / 2
+            const targetX = charX + charWidth * characterPosition.offsetX - targetWidth / 2
             const targetY = charY + charHeight * characterPosition.offsetY
 
-            // 얼굴 그리기
+            // 회전 적용
+            if (characterPosition.rotate !== 0) {
+              ctx.save()
+              ctx.translate(targetX + targetWidth / 2, targetY + targetHeight / 2)
+              ctx.rotate(characterPosition.rotate * Math.PI / 180)
+              ctx.translate(-(targetX + targetWidth / 2), -(targetY + targetHeight / 2))
+            }
+
+            // ���굴 그리기
             ctx.drawImage(
               faceCanvas,
               targetX, targetY,
               targetWidth, targetHeight
             )
+
+            // 회전 복원
+            if (characterPosition.rotate !== 0) {
+              ctx.restore()
+            }
           }
           resolve(true)
         })
@@ -450,8 +475,8 @@ const processImage = async (applyBackground: boolean = false) => {
           // 캐릭터 그리기
           ctx.drawImage(charImage, charX, charY, charWidth, charHeight)
 
-          // 문�� 그리기
-          if (customText.value && patmalCharacterIds.includes(store.selectedCharacter)) {
+          // 문구 그리기
+          if (customText.value && characterTextStyles[store.selectedCharacter]) {
             const textStyle = characterTextStyles[store.selectedCharacter]
             
             // 텍스트 스타일 설정
@@ -496,7 +521,7 @@ const processImage = async (applyBackground: boolean = false) => {
             lines.forEach((line, i) => {
               const lineY = textY + (i - (lines.length - 1) / 2) * (textStyle.fontSize * textStyle.lineHeight)
               
-              // 텍스트 외곽선
+              // 텍스트 외곽선 (일반 캐릭터는 흰색 외곽선)
               ctx.strokeStyle = 'white'
               ctx.lineWidth = 4
               ctx.strokeText(line, textX, lineY)
@@ -621,40 +646,20 @@ const closeQRModal = () => {
   }
 }
 
-// 캐릭터 선택 함수
+// 캐릭터 선택 함수 수정
 const selectCharacter = async (characterId: number) => {
+  // 말풍선이 있는 캐릭터는 선택 불가
+  if (patmalCharacterIds.includes(characterId)) {
+    return
+  }
+  
   selectedCharacter.value = characterId
   store.setCharacter(characterId)
   
-  // 풍선 캐릭터인 경우 텍스트 에디터 표시
-  if (patmalCharacterIds.includes(characterId)) {
-    showTextEditor.value = true
-  } else {
-    showTextEditor.value = false
-    customText.value = ''
-  }
+  // 일반 캐릭터 선택 시 텍스트 에디터 표시
+  showTextEditor.value = true
   
   await processImage(store.selectedBackground !== null)
-}
-
-// 드래그 이벤트 핸들러
-const startDrag = (e: MouseEvent | TouchEvent) => {
-  if (!selectedCharacter.value) return
-  isDragging.value = true
-  const pos = 'touches' in e ? e.touches[0] : e
-  dragPosition.value = { x: pos.clientX, y: pos.clientY }
-}
-
-const onDrag = (e: MouseEvent | TouchEvent) => {
-  if (!isDragging.value) return
-  const pos = 'touches' in e ? e.touches[0] : e
-  // 드래그 위치 업데이트 및 이미지 재처리
-  dragPosition.value = { x: pos.clientX, y: pos.clientY }
-  processImage(store.selectedBackground !== null)
-}
-
-const endDrag = () => {
-  isDragging.value = false
 }
 
 // 캐릭터 크기 조절
@@ -691,12 +696,6 @@ const setText = (text: string) => {
         :src="processedImage" 
         alt="Processed photo"
         class="preview-image"
-        @mousedown="startDrag"
-        @mousemove="onDrag"
-        @mouseup="endDrag"
-        @touchstart="startDrag"
-        @touchmove="onDrag"
-        @touchend="endDrag"
       />
 
       <!-- 크기 조절 컨트롤 -->
