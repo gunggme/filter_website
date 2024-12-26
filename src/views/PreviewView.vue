@@ -110,7 +110,7 @@ const categories = ref([
     id: 1,
     name: '아버지',
     texts: [
-      { id: 1, content: '우리집의 든든한 기둥 아빠!! 사랑합니다.' },
+      { id: 1, content: '우리집의 든든한 기둥 아빠! 사랑합니다.' },
       { id: 2, content: '아버지는 언제나 저의 영웅입니다.' },
       { id: 3, content: '저의 최고의 선물은 아버지입니다.' }
     ]
@@ -119,7 +119,7 @@ const categories = ref([
     id: 2,
     name: '어머니',
     texts: [
-      { id: 4, content: '정성으로 우리를 돌봐주시는 엄마!! 사랑합니다.' },
+      { id: 4, content: '정성으로 우리를 돌봐주시는 엄마!!\n사랑합니다.' },
       { id: 5, content: '우리 엄마여서 고마워요. 사랑해요^^' },
       { id: 6, content: '엄마!! 낳아주시고 키워주셔서 감사해요.' }
     ]
@@ -128,8 +128,8 @@ const categories = ref([
     id: 3,
     name: '자녀',
     texts: [
-      { id: 7, content: '우리 딸 사랑해~딸이 있어 언제나 행복해^^' },
-      { id: 8, content: '우리 아들 사랑해~아들이 있어 언제나 행복해^^' },
+      { id: 7, content: '우리 딸 사랑해~딸이 있어\n언제나 행복해^^' },
+      { id: 8, content: '우리 아들 사랑해~아들이 있어\n언제나 행복해^^' },
       { id: 9, content: '우리 가족 언제나 행복하자!! 사랑한다.' }
     ]
   },
@@ -137,7 +137,7 @@ const categories = ref([
     id: 4,
     name: '할머니',
     texts: [
-      { id: 10, content: '조건 없는 사랑을 주시는 할머니!! 존경합니다.' },
+      { id: 10, content: '조건 없는 사랑을 주시는 할머니!!\n존경합니다.' },
       { id: 11, content: '늘 건강하세요. 사랑해요 할머니~' },
       { id: 12, content: '할머니 보고싶어요. 전화할께요~' }
     ]
@@ -146,7 +146,7 @@ const categories = ref([
     id: 5,
     name: '할아버지',
     texts: [
-      { id: 13, content: '열심히 살아오신 세월을 존경합니다. 할아버지!!' },
+      { id: 13, content: '열심히 살아오신 세월을 존경합니다.\n할아버지!!' },
       { id: 14, content: '늘 건강하세요. 사랑해요 할아버지~' },
       { id: 15, content: '할아버지 보고싶어요. 전화할께요~' }
     ]
@@ -155,7 +155,7 @@ const categories = ref([
     id: 6,
     name: '손자',
     texts: [
-      { id: 16, content: '우리 손자 손녀가 나의 보물이다. 사랑한다.' },
+      { id: 16, content: '우리 손자 손녀가 나의 보물이다.\n사랑한다.' },
       { id: 17, content: '아프지 말고 쑥쑥 크자!' },
       { id: 18, content: '우린 언제나 너희 편이다. 화이팅!!' }
     ]
@@ -174,8 +174,8 @@ const categories = ref([
     name: '기념일',
     texts: [
       { id: 22, content: '생신 축하드려요~ 행복한 하루 보내세요^^' },
-      { id: 23, content: '오늘이 가장 젊은날!! 생신 축하드리고 행복하세요^^' },
-      { id: 24, content: '언제나 신혼부부 같으신 어머니, 아버지~ 결혼 기념일 축하드려요^^' }
+      { id: 23, content: '오늘이 가장 젊은날!! 생신 축하드리고\n행복하세요^^' },
+      { id: 24, content: '언제나 신혼부부 같으신 어머니, 아버지~\n결혼 기념일 축하드려요^^' }
     ]
   }
 ])
@@ -239,13 +239,13 @@ interface CharacterTextStyles {
 
 const characterTextStyles: CharacterTextStyles = {
   // 일반 캐릭터 (캐릭터 아래에 텍스트)
-  1: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 다람이
-  3: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이
-  5: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
-  7: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
-  8: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이
-  9: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
-  11: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 }, // 하늘이
+  1: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 다람이
+  3: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이
+  5: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
+  7: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
+  8: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이
+  9: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
+  11: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 }, // 하늘이
 
   // 말풍선 캐릭터 (말풍선 안에 텍스트)
   2: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },   // 다람이 말풍선
@@ -478,9 +478,8 @@ const processImage = async (applyBackground: boolean = false) => {
           // 문구 그리기
           if (customText.value && characterTextStyles[store.selectedCharacter]) {
             const textStyle = characterTextStyles[store.selectedCharacter]
-            
             // 텍스트 스타일 설정
-            ctx.font = `${textStyle.fontSize}px KyoboHandwriting`
+            ctx.font = `bold ${textStyle.fontSize}px KyoboHandwriting`
             ctx.fillStyle = 'black'
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
