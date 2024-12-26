@@ -190,9 +190,66 @@ const currentTexts = computed(() => {
 // 말풍선 캐릭터 ID 목록
 const patmalCharacterIds = [2, 4, 6, 10, 12]
 
+// 말풍선 캐릭터만 필터링하는 computed 속성 추가
+const filteredCharacters = computed(() => {
+  return characters.value.filter(char => patmalCharacterIds.includes(char.id))
+})
+
+// 캐릭터별 얼굴 위치 설정 타입 정의
+interface FacePosition {
+  scale: number;
+  offsetY: number;
+}
+
+interface CharacterFacePositions {
+  [key: number]: FacePosition;
+}
+
+const characterFacePositions: CharacterFacePositions = {
+  2: { scale: 0.4, offsetY: 0.25 },  // 다람이 말풍선
+  4: { scale: 0.4, offsetY: 0.2 }, // 바람이 말풍선
+  6: { scale: 0.4, offsetY: 0.15 },  // 바람이 한복 말풍선
+  10: { scale: 0.4, offsetY: 0.25 }, // 아람이 말풍선
+  12: { scale: 0.4, offsetY: 0.2 }  // 하늘이 말풍선
+}
+
+// 캐릭터별 문구 스타일 설정
+interface TextStyle {
+  fontSize: number;
+  offsetX: number;
+  offsetY: number;
+  maxWidth: number;
+  lineHeight: number;
+  rotate: number;
+}
+
+interface CharacterTextStyles {
+  [key: number]: TextStyle;
+}
+
+const characterTextStyles: CharacterTextStyles = {
+  2: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },    // 다람이 말풍선
+  4: { fontSize: 32, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.8, lineHeight: 1.2, rotate: 0 },   // 바람이 말풍선
+  6: { fontSize: 30, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.75, lineHeight: 1.3, rotate: 0 },   // 바람이 한복 말풍선
+  10: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },   // 아람이 말풍선
+  12: { fontSize: 32, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.8, lineHeight: 1.2, rotate: 0 }   // 하늘이 말풍선
+}
+
 // MediaPipe 초기화
 const initializeMediaPipe = async () => {
   try {
+    console.log('MediaPipe 초기화 시작')
+    
+    // 이전 인스턴스가 있다면 정리
+    if (faceMesh) {
+      await faceMesh.close()
+      faceMesh = null
+    }
+    if (selfieSegmentation) {
+      await selfieSegmentation.close()
+      selfieSegmentation = null
+    }
+    
     // Selfie Segmentation 초기화
     selfieSegmentation = new SelfieSegmentation({
       locateFile: (file) => {
@@ -203,22 +260,39 @@ const initializeMediaPipe = async () => {
     selfieSegmentation.setOptions({
       modelSelection: 1
     })
+    console.log('Selfie Segmentation 초기화 완료')
 
     // Face Mesh 초기화
     faceMesh = new FaceMesh({
       locateFile: (file) => {
-        return `/mediapipe/face_mesh/${file}`
+        const path = `/mediapipe/face_mesh/${file}`
+        console.log('FaceMesh 파일 경로:', path)
+        return path
       }
     })
+    console.log('FaceMesh 인스턴스 생성됨')
+
     await faceMesh.initialize()
+    console.log('FaceMesh 초기화 완료')
+
     faceMesh.setOptions({
       maxNumFaces: 1,
       refineLandmarks: false,
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5
     })
+    console.log('FaceMesh 옵션 설정 완료')
   } catch (error) {
     console.error('MediaPipe 초기화 실패:', error)
+    // 에러 발생 시 인스턴스 정리
+    if (faceMesh) {
+      await faceMesh.close()
+      faceMesh = null
+    }
+    if (selfieSegmentation) {
+      await selfieSegmentation.close()
+      selfieSegmentation = null
+    }
   }
 }
 
@@ -229,73 +303,73 @@ const processImage = async (applyBackground: boolean = false) => {
   isLoading.value = true
   
   try {
-    // 캔버스 생성
+    // MediaPipe가 초기화되지 않았다면 다시 초기화
+    if (!faceMesh || !selfieSegmentation) {
+      await initializeMediaPipe()
+    }
+
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // 원본 이미지 로드
     const originalImage = new Image()
     originalImage.src = capturedImage.value
     await new Promise((resolve) => {
       originalImage.onload = resolve
     })
 
-    // 캔버스 크기 설정
     canvas.width = originalImage.width
     canvas.height = originalImage.height
 
-    // 기본적으로 원본 이미지 그리기
-    ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height)
-
-    // 배경 선택된 경우에만 세그멘테이션 및 배경 합성 처리
-    if (applyBackground && store.selectedBackground) {
-      await initializeMediaPipe()
-
-      if (selfieSegmentation) {
+    // 1. 배경 이미지 먼저 그리기
+    if (store.selectedBackground) {
+      const bgImage = new Image()
+      const bgSrc = backgroundImages[store.selectedBackground]
+      if (bgSrc) {
+        bgImage.src = bgSrc
         await new Promise((resolve) => {
-          selfieSegmentation!.onResults((results) => {
-            if (results.segmentationMask) {
-              const tempCanvas = document.createElement('canvas')
-              tempCanvas.width = canvas.width
-              tempCanvas.height = canvas.height
-              const tempCtx = tempCanvas.getContext('2d')
-              if (!tempCtx) return
-
-              tempCtx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height)
-              tempCtx.globalCompositeOperation = 'source-in'
-              tempCtx.drawImage(originalImage, 0, 0, canvas.width, canvas.height)
-
-              // 배경 이미지 처리 수정
-              const bgImage = new Image()
-              const bgSrc = backgroundImages[store.selectedBackground]
-              if (bgSrc) {
-                bgImage.src = bgSrc
-                bgImage.onload = () => {
-                  ctx.clearRect(0, 0, canvas.width, canvas.height)
-                  ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height)
-                  ctx.drawImage(tempCanvas, 0, 0)
-                  resolve(true)
-                }
-                bgImage.onerror = () => {
-                  console.error('배경 이미지 로드 실패')
-                  resolve(true)
-                }
-              } else {
-                console.error('선택된 배경 이미지가 없습니다')
-                resolve(true)
-              }
-            } else {
-              resolve(true)
-            }
-          })
-          selfieSegmentation!.send({ image: originalImage })
+          bgImage.onload = resolve
         })
+        ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height)
       }
     }
 
-    // 얼굴 인식 및 캐릭터 위치 조정
-    if (faceMesh && store.selectedCharacter) {
+    // 캐릭터 크기와 위치 계산 (실제로 그리지는 않음)
+    let charWidth = 0
+    let charHeight = 0
+    let charX = 0
+    let charY = 0
+
+    if (store.selectedCharacter) {
+      const charImage = new Image()
+      charImage.src = characterImages[store.selectedCharacter]
+      await new Promise((resolve) => {
+        charImage.onload = () => {
+          // 캐릭터 크기 계산 (기본 크기를 120%로 증가)
+          charWidth = canvas.width * 1.2 * characterScale.value
+          charHeight = (charWidth / charImage.width) * charImage.height
+
+          // 캐릭터 위치 계산 (중앙)
+          charX = (canvas.width - charWidth) / 2
+          charY = (canvas.height - charHeight) / 2
+
+          // 드래그 중인 경우 위치 조정
+          if (isDragging.value) {
+            const offsetX = charWidth / 2
+            const offsetY = charHeight * 0.55
+            charX = dragPosition.value.x - offsetX
+            charY = dragPosition.value.y - offsetY
+          }
+
+          charX = Math.max(0, Math.min(charX, canvas.width - charWidth))
+          charY = Math.max(0, Math.min(charY, canvas.height - charHeight))
+          resolve(true)
+        }
+      })
+    }
+
+    // 2. 얼굴 인식 및 세그멘테이션
+    if (faceMesh && selfieSegmentation) {
       await new Promise((resolve) => {
         faceMesh!.onResults((results) => {
           if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
@@ -310,146 +384,179 @@ const processImage = async (applyBackground: boolean = false) => {
               maxY = Math.max(maxY, landmark.y)
             })
 
-            // 얼굴 중심점과 크기 계산
+            // 얼굴 영역 계산 (여유 공간 추가)
+            const padding = 0.3  // 패딩을 줄임
             const faceWidth = (maxX - minX) * canvas.width
             const faceHeight = (maxY - minY) * canvas.height
-            const faceCenterX = (minX + maxX) / 2 * canvas.width
-            const faceCenterY = (minY + maxY) / 2 * canvas.height
+            const faceX = Math.max(0, minX * canvas.width - faceWidth * padding)
+            const faceY = Math.max(0, minY * canvas.height - faceHeight * padding)
+            const paddedWidth = faceWidth * (1 + padding * 2)
+            const paddedHeight = faceHeight * (1 + padding * 2)
 
-            // 캐릭터 이미지 로드 및 배치
-            const charImage = new Image()
-            charImage.src = characterImages[store.selectedCharacter]
-            charImage.onload = () => {
-              // 캐릭터 크기 계산 (얼굴 크기 기준)
-              const charWidth = faceWidth * 5 * characterScale.value // 얼굴 크기의 5배로 조정
-              const charHeight = (charWidth / charImage.width) * charImage.height
+            // 얼굴 영역만 추출
+            const faceCanvas = document.createElement('canvas')
+            faceCanvas.width = paddedWidth
+            faceCanvas.height = paddedHeight
+            const faceCtx = faceCanvas.getContext('2d')
+            if (!faceCtx) return
 
-              // 캐릭터 위치 계산 (얼굴이 프레임 안에 오도록)
-              let charX = faceCenterX - (charWidth / 2)
-              // 얼굴이 프레임의 중앙 약간 위쪽에 오도록 조정
-              let charY = faceCenterY - (charHeight * 0.55)
+            // 얼굴 마스크 생성
+            faceCtx.beginPath()
+            faceCtx.ellipse(
+              paddedWidth / 2,
+              paddedHeight / 2,
+              paddedWidth / 2.2,
+              paddedHeight / 2.2,
+              0,
+              0,
+              Math.PI * 2
+            )
+            faceCtx.closePath()
+            faceCtx.clip()
 
-              // 드래그 중인 경우 위치 조정
-              if (isDragging.value) {
-                const offsetX = charWidth / 2
-                const offsetY = charHeight * 0.55
-                charX = dragPosition.value.x - offsetX
-                charY = dragPosition.value.y - offsetY
-              }
+            // 얼굴 부분만 그리기
+            faceCtx.drawImage(
+              originalImage,
+              faceX, faceY, paddedWidth, paddedHeight,
+              0, 0, paddedWidth, paddedHeight
+            )
 
-              // 캐릭터가 화면 밖으로 나가지 않도록 조정
-              const adjustedX = Math.max(0, Math.min(charX, canvas.width - charWidth))
-              const adjustedY = Math.max(0, Math.min(charY, canvas.height - charHeight))
+            // 얼굴을 캐릭터 구멍 위치에 맞춰 그리기
+            const characterPosition = characterFacePositions[store.selectedCharacter] || { scale: 0.5, offsetY: 0.3 }
+            const targetWidth = charWidth * characterPosition.scale
+            const targetHeight = (targetWidth / paddedWidth) * paddedHeight
+            const targetX = charX + (charWidth - targetWidth) / 2
+            const targetY = charY + charHeight * characterPosition.offsetY
 
-              // 캐릭터 그리기
-              ctx.drawImage(charImage, adjustedX, adjustedY, charWidth, charHeight)
-
-              // 캐릭터 그리기 후에 텍스트 추가
-              if (customText.value && patmalCharacterIds.includes(store.selectedCharacter)) {
-                ctx.font = '32px KyoboHandwriting'
-                ctx.fillStyle = 'black'
-                ctx.textAlign = 'center'
-                
-                // 캐릭터 위치를 기준으로 텍스트 위치 계산
-                const textX = adjustedX + (charWidth / 2)
-                const textY = adjustedY + (charHeight * 0.8)
-                
-                // 텍스트 줄바꿈 처리
-                const maxWidth = charWidth * 0.8
-                const words = customText.value.split('')
-                let line = ''
-                let lines = []
-                let lineHeight = 40  // 줄 간격도 증가
-
-                for (let i = 0; i < words.length; i++) {
-                  const testLine = line + words[i]
-                  const metrics = ctx.measureText(testLine)
-                  const testWidth = metrics.width
-
-                  if (testWidth > maxWidth) {
-                    lines.push(line)
-                    line = words[i]
-                  } else {
-                    line = testLine
-                  }
-                }
-                lines.push(line)
-
-                // 여러 줄의 텍스트 그리기
-                lines.forEach((line, i) => {
-                  // 텍스트 외곽선 추가로 가독성 향상
-                  ctx.strokeStyle = 'white'
-                  ctx.lineWidth = 4
-                  ctx.strokeText(line, textX, textY + (i * lineHeight))
-                  ctx.fillText(line, textX, textY + (i * lineHeight))
-                })
-              }
-
-              resolve(true)
-            }
-          } else {
-            // 얼굴이 감지되지 않은 경우
-            const charImage = new Image()
-            charImage.src = characterImages[store.selectedCharacter]
-            charImage.onload = () => {
-              const charWidth = canvas.width * 0.6 * characterScale.value // 화면 너비의 60%로 조정
-              const charHeight = (charWidth / charImage.width) * charImage.height
-              
-              // 화면 중앙에 배치
-              let charX = (canvas.width - charWidth) / 2
-              let charY = (canvas.height - charHeight) / 2
-
-              // 드래그 중인 경우 위치 조정
-              if (isDragging.value) {
-                const offsetX = charWidth / 2
-                const offsetY = charHeight * 0.55
-                charX = dragPosition.value.x - offsetX
-                charY = dragPosition.value.y - offsetY
-              }
-
-              const adjustedX = Math.max(0, Math.min(charX, canvas.width - charWidth))
-              const adjustedY = Math.max(0, Math.min(charY, canvas.height - charHeight))
-
-              ctx.drawImage(charImage, adjustedX, adjustedY, charWidth, charHeight)
-              resolve(true)
-            }
+            // 얼굴 그리기
+            ctx.drawImage(
+              faceCanvas,
+              targetX, targetY,
+              targetWidth, targetHeight
+            )
           }
+          resolve(true)
         })
-        faceMesh!.send({ image: originalImage })
+        faceMesh!.send({image: originalImage})
       })
     }
 
-    // 처리된 이미지 저장
+    // 3. 마지막으로 캐릭터와 문구 그리기
+    if (store.selectedCharacter) {
+      const charImage = new Image()
+      charImage.src = characterImages[store.selectedCharacter]
+      await new Promise((resolve) => {
+        charImage.onload = () => {
+          // 캐릭터 그리기
+          ctx.drawImage(charImage, charX, charY, charWidth, charHeight)
+
+          // 문�� 그리기
+          if (customText.value && patmalCharacterIds.includes(store.selectedCharacter)) {
+            const textStyle = characterTextStyles[store.selectedCharacter]
+            
+            // 텍스트 스타일 설정
+            ctx.font = `${textStyle.fontSize}px KyoboHandwriting`
+            ctx.fillStyle = 'black'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+
+            // 텍스트 위치 계산
+            const textX = charX + charWidth * textStyle.offsetX
+            const textY = charY + charHeight * textStyle.offsetY
+
+            // 회전 적용 (필요한 경우)
+            if (textStyle.rotate !== 0) {
+              ctx.save()
+              ctx.translate(textX, textY)
+              ctx.rotate(textStyle.rotate * Math.PI / 180)
+              ctx.translate(-textX, -textY)
+            }
+
+            // 텍스트 줄바꿈 처리
+            const maxWidth = charWidth * textStyle.maxWidth
+            const words = customText.value.split('')
+            let line = ''
+            let lines = []
+            
+            for (let i = 0; i < words.length; i++) {
+              const testLine = line + words[i]
+              const metrics = ctx.measureText(testLine)
+              const testWidth = metrics.width
+
+              if (testWidth > maxWidth && line) {
+                lines.push(line)
+                line = words[i]
+              } else {
+                line = testLine
+              }
+            }
+            lines.push(line)
+
+            // 여러 줄의 텍스트 그리기
+            lines.forEach((line, i) => {
+              const lineY = textY + (i - (lines.length - 1) / 2) * (textStyle.fontSize * textStyle.lineHeight)
+              
+              // 텍스트 외곽선
+              ctx.strokeStyle = 'white'
+              ctx.lineWidth = 4
+              ctx.strokeText(line, textX, lineY)
+              
+              // 텍스트 내부
+              ctx.fillText(line, textX, lineY)
+            })
+
+            // 회전 복원 (필요한 경우)
+            if (textStyle.rotate !== 0) {
+              ctx.restore()
+            }
+          }
+          resolve(true)
+        }
+      })
+    }
+
     processedImage.value = canvas.toDataURL('image/jpeg', 0.8)
   } catch (error) {
     console.error('이미지 처리 중 오류:', error)
   } finally {
     isLoading.value = false
-    // MediaPipe 인스턴스 정리
-    if (selfieSegmentation) {
-      selfieSegmentation.close()
-    }
-    if (faceMesh) {
-      faceMesh.close()
-    }
   }
 }
 
 onMounted(async () => {
+  console.log('컴포넌트 마운트됨')
   const imageData = sessionStorage.getItem('capturedImage')
   
   if (imageData) {
+    console.log('이미지 데이터 존재')
     capturedImage.value = imageData
     sessionStorage.removeItem('capturedImage')
-    await processImage(false) // 초기에는 배경 적용하지 않음
+    
+    // MediaPipe 초기화
+    await initializeMediaPipe()
+    
+    // 초기 배경 설정 (배경1)
+    store.setBackground(1)
+    
+    // 이미지 처리 (배경 적용)
+    await processImage(true)
   } else {
+    console.log('이미지 데이터 없음, final로 리다이렉트')
     router.push('/final')
   }
 })
 
 // 컴포넌트 언마운트 시 이미지 데이터 정리
-onUnmounted(() => {
+onUnmounted(async () => {
   sessionStorage.removeItem('capturedImage')
+  if (faceMesh) {
+    await faceMesh.close()
+    faceMesh = null
+  }
+  if (selfieSegmentation) {
+    await selfieSegmentation.close()
+    selfieSegmentation = null
+  }
 })
 
 const retake = () => {
@@ -479,7 +586,7 @@ const confirm = async () => {
     const byteArray = new Uint8Array(byteNumbers)
     const blob = new Blob([byteArray], { type: 'image/png' })
     
-    // FormData 생성 및 파일 추가
+    // FormData 생성 및 일 추가
     const formData = new FormData()
     formData.append('file', blob, 'photo.png')
     
@@ -552,7 +659,8 @@ const endDrag = () => {
 
 // 캐릭터 크기 조절
 const adjustScale = (delta: number) => {
-  characterScale.value = Math.max(0.5, Math.min(2, characterScale.value + delta))
+  // 크기 조절 범위를 0.5~3.0으로 확장
+  characterScale.value = Math.max(0.5, Math.min(3.0, characterScale.value + delta))
   processImage(store.selectedBackground !== null)
 }
 
@@ -598,7 +706,7 @@ const setText = (text: string) => {
         <button class="scale-button" @click="adjustScale(0.1)">+</button>
       </div>
 
-      <!-- 편집 버튼과 선택기 패널을 하나의 컨테이너로 묶음 -->
+      <!-- 편집 버튼과 선택기 패널을 하나의 테이너로 묶음 -->
       <div class="editor-container">
         <!-- 편집 버튼 -->
         <div class="edit-buttons">
@@ -663,7 +771,7 @@ const setText = (text: string) => {
           class="selector-panel"
         >
           <div 
-            v-for="char in characters" 
+            v-for="char in filteredCharacters" 
             :key="char.id"
             :class="['selector-item', { selected: selectedCharacter === char.id }]"
             @click="selectCharacter(char.id)"
@@ -775,7 +883,7 @@ const setText = (text: string) => {
   font-size: 14px;
 }
 
-/* 편집�� 컨테이너 */
+/* 편집 컨테이너 */
 .editor-container {
   position: absolute;
   bottom: calc(76px + env(safe-area-inset-bottom));

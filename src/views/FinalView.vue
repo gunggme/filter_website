@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFilterStore } from '@/stores/filterStore'
+import cameraSound from '@/assets/CameraSound.mp3'
 
 const router = useRouter()
 const store = useFilterStore()
@@ -16,6 +17,9 @@ const capturedImage = ref('')
 
 // 안드로이드 체크 함수
 const isAndroid = () => /Android/i.test(navigator.userAgent)
+
+// 카메라 사운드 객체 생성
+const sound = new Audio(cameraSound)
 
 // 카메라 시작
 const startCamera = async () => {
@@ -111,6 +115,11 @@ const startCapture = async () => {
 
   const countdownInterval = setInterval(() => {
     countdown.value--
+    
+    // 1초일 때 사운드 재생
+    if (countdown.value === 1) {
+      sound.play()
+    }
     
     if (countdown.value === 0) {
       clearInterval(countdownInterval)
