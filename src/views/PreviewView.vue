@@ -239,13 +239,13 @@ interface CharacterTextStyles {
 
 const characterTextStyles: CharacterTextStyles = {
   // 일반 캐릭터 (캐릭터 아래에 텍스트)
-  1: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 다람이
-  3: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 바람이
-  5: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
-  7: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
-  8: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 아람이
-  9: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
-  11: { fontSize: 40, offsetX: 0.5, offsetY: 1, maxWidth: 0.9, lineHeight: 1.2, rotate: 0 }, // 하늘이
+  1: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 다람이
+  3: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이
+  5: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
+  7: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
+  8: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이
+  9: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
+  11: { fontSize: 60, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 }, // 하늘이
 
   // 말풍선 캐릭터 (말풍선 안에 텍스트)
   2: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },   // 다람이 말풍선
@@ -394,7 +394,7 @@ const processImage = async (applyBackground: boolean = false) => {
               maxY = Math.max(maxY, landmark.y)
             })
 
-            // 얼굴 영역 계산 (좌우 패딩을 더 크게 설정)
+            // 얼굴 영역 ��산 (좌우 패딩을 더 크게 설정)
             const paddingVertical = 0.3  // 상하 패딩
             const paddingHorizontal = 0.5  // 좌우 패딩을 더 크게 설정
             
@@ -448,7 +448,7 @@ const processImage = async (applyBackground: boolean = false) => {
               ctx.translate(-(targetX + targetWidth / 2), -(targetY + targetHeight / 2))
             }
 
-            // ���굴 그리기
+            // 얼굴 그리기
             ctx.drawImage(
               faceCanvas,
               targetX, targetY,
@@ -563,7 +563,11 @@ onMounted(async () => {
     // 초기 배경 설정 (배경1)
     store.setBackground(1)
     
-    // 이미지 처리 (배경 적용)
+    // 초기 캐릭터 설정 (캐릭터1)
+    selectedCharacter.value = 1
+    store.setCharacter(1)
+    
+    // 이미지 처리 (배경과 캐릭터 적용)
     await processImage(true)
   } else {
     console.log('이미지 데이터 없음, final로 리다이렉트')
@@ -705,7 +709,7 @@ const setText = (text: string) => {
         <button class="scale-button" @click="adjustScale(0.1)">+</button>
       </div>
 
-      <!-- 편집 버튼과 선택기 패널을 하나의 테이너로 묶음 -->
+      <!-- 편집 ���튼과 선택기 패널을 하나의 테이너로 묶음 -->
       <div class="editor-container">
         <!-- 편집 버튼 -->
         <div class="edit-buttons">
