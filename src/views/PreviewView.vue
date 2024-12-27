@@ -110,7 +110,7 @@ const categories = ref([
     id: 1,
     name: '아버지',
     texts: [
-      { id: 1, content: '우리집의 든든한 기둥 아빠! 사랑합니다.' },
+      { id: 1, content: '우리집의 든든한 기둥 아빠!\n사랑합니다.' },
       { id: 2, content: '아버지는 언제나 저의 영웅입니다.' },
       { id: 3, content: '저의 최고의 선물은 아버지입니다.' }
     ]
@@ -128,7 +128,7 @@ const categories = ref([
     id: 3,
     name: '자녀',
     texts: [
-      { id: 7, content: '우리 딸 사랑해~딸이 있어\n언제나 행복해^^' },
+      { id: 7, content: '우리 딸 사랑해~딸이 있어 언제나 행복해^^' },
       { id: 8, content: '우리 아들 사랑해~아들이 있어\n언제나 행복해^^' },
       { id: 9, content: '우리 가족 언제나 행복하자!! 사랑한다.' }
     ]
@@ -239,13 +239,13 @@ interface CharacterTextStyles {
 
 const characterTextStyles: CharacterTextStyles = {
   // 일반 캐릭터 (캐릭터 아래에 텍스트)
-  1: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 다람이
-  3: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이
-  5: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
-  7: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
-  8: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이
-  9: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
-  11: { fontSize: 90, offsetX: 0.5, offsetY: 1, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 }, // 하늘이
+  1: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 다람이
+  3: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이
+  5: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
+  7: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
+  8: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이
+  9: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
+  11: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 }, // 하늘이
 
   // 말풍선 캐릭터 (말풍선 안에 텍스트)
   2: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },   // 다람이 말풍선
@@ -478,8 +478,9 @@ const processImage = async (applyBackground: boolean = false) => {
           // 문구 그리기
           if (customText.value && characterTextStyles[store.selectedCharacter]) {
             const textStyle = characterTextStyles[store.selectedCharacter]
+            
             // 텍스트 스타일 설정
-            ctx.font = `bold ${textStyle.fontSize}px KyoboHandwriting`
+            ctx.font = `${textStyle.fontSize}px KyoboHandwriting`
             ctx.fillStyle = 'black'
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
