@@ -497,14 +497,43 @@ const processImage = async (applyBackground: boolean = false) => {
               ctx.translate(-textX, -textY)
             }
 
-            // 선택한 글자를 적용
+            // 텍스트 줄바꿈 처리
+            const maxWidth = charWidth * textStyle.maxWidth
+            const words = customText.value.split('')
+            let line = ''
+            let lines = []
+            
+            for (let i = 0; i < words.length; i++) {
+              const testLine = line + words[i]
+              const metrics = ctx.measureText(testLine)
+              const testWidth = metrics.width
 
-            /// 적용전 내려적기 적용
-            const textLines = customText.value.split('\n')
-            textLines.forEach((line, index) => {
-              const lineY = textY + index * (textStyle.fontSize * textStyle.lineHeight)
+              if (testWidth > maxWidth && line) {
+                lines.push(line)
+                line = words[i]
+              } else {
+                line = testLine
+              }
+            }
+            lines.push(line)
+
+            // 여러 줄의 텍스트 그리기
+            lines.forEach((line, i) => {
+              const lineY = textY + (i - (lines.length - 1) / 2) * (textStyle.fontSize * textStyle.lineHeight)
+              
+              // 텍스트 외곽선 (일반 캐릭터는 흰색 외곽선)
+              ctx.strokeStyle = 'black'
+              ctx.lineWidth = 4
+              ctx.strokeText(line, textX, lineY)
+              
+              // 텍스트 내부
               ctx.fillText(line, textX, lineY)
             })
+
+            // 회전 복원 (필요한 경우)
+            if (textStyle.rotate !== 0) {
+              ctx.restore()
+            }
           }
           resolve(true)
         }
