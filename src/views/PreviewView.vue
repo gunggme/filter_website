@@ -110,72 +110,72 @@ const categories = ref([
     id: 1,
     name: '아버지',
     texts: [
-      { id: 1, content: '우리집의 든든한 기둥 아빠!\n사랑합니다.' },
-      { id: 2, content: '아버지는 언제나 저의 영웅입니다.' },
-      { id: 3, content: '저의 최고의 선물은 아버지입니다.' }
+      { id: 1, content: '든든한 아빠!\n사랑합니다' },
+      { id: 2, content: '아빠는 항상\n우리의 영웅!.' },
+      { id: 3, content: '최고의 선물\n우리 아빠' }
     ]
   },
   {
     id: 2,
     name: '어머니',
     texts: [
-      { id: 4, content: '정성으로 우리를 돌봐주시는 엄마!!\n사랑합니다.' },
-      { id: 5, content: '우리 엄마여서 고마워요. 사랑해요^^' },
-      { id: 6, content: '엄마!! 낳아주시고 키워주셔서 감사해요.' }
+      { id: 4, content: '애정 듬뿍 엄마!\n사랑합니다.' },
+      { id: 5, content: '우리 엄마여서\n고마워요' },
+      { id: 6, content: '최고의 선물,\n우리 엄마' }
     ]
   },
   {
     id: 3,
     name: '자녀',
     texts: [
-      { id: 7, content: '우리 딸 사랑해~딸이 있어 언제나 행복해^^' },
-      { id: 8, content: '우리 아들 사랑해~아들이 있어\n언제나 행복해^^' },
-      { id: 9, content: '우리 가족 언제나 행복하자!! 사랑한다.' }
+      { id: 7, content: '딸이 있어\n항상 행복해' },
+      { id: 8, content: '아들이 있어\n언제나 행복해' },
+      { id: 9, content: '우리 가족\n언제나 행복하자' }
     ]
   },
   {
     id: 4,
     name: '할머니',
     texts: [
-      { id: 10, content: '조건 없는 사랑을 주시는 할머니!!\n존경합니다.' },
-      { id: 11, content: '늘 건강하세요. 사랑해요 할머니~' },
-      { id: 12, content: '할머니 보고싶어요. 전화할께요~' }
+      { id: 10, content: '사랑하는 할머니\n존경합니다' },
+      { id: 11, content: '늘 건강하세요\n할머니' },
+      { id: 12, content: '할머니 보고싶어요\n전화할게요' }
     ]
   },
   {
     id: 5,
     name: '할아버지',
     texts: [
-      { id: 13, content: '열심히 살아오신 세월을 존경합니다.\n할아버지!!' },
-      { id: 14, content: '늘 건강하세요. 사랑해요 할아버지~' },
-      { id: 15, content: '할아버지 보고싶어요. 전화할께요~' }
+      { id: 13, content: '사랑하는 할아버지\n존경합니다' },
+      { id: 14, content: '늘 건강하세요\n할아버지' },
+      { id: 15, content: '할아버지 보고싶어요\n전화할게요' }
     ]
   },
   {
     id: 6,
     name: '손자',
     texts: [
-      { id: 16, content: '우리 손자 손녀가 나의 보물이다.\n사랑한다.' },
-      { id: 17, content: '아프지 말고 쑥쑥 크자!' },
-      { id: 18, content: '우린 언제나 너희 편이다. 화이팅!!' }
+      { id: 16, content: '우리 손자가\n나의 보물이다.' },
+      { id: 17, content: '아프지 말고\n쑥쑥 크자' },
+      { id: 18, content: '우린 언제나\n너희 편이다.' }
     ]
   },
   {
     id: 7,
     name: '부부',
     texts: [
-      { id: 19, content: '여보 사랑해요~' },
-      { id: 20, content: '당신과 함께한 모든 순간이 소중해' },
-      { id: 21, content: '내 인생의 동반자가 되줘서 고마워' }
+      { id: 19, content: '여보 사랑해요' },
+      { id: 20, content: '당신과 함께한\n모든것이 소중해' },
+      { id: 21, content: '내 인생의 절반\n항상 고마워' }
     ]
   },
   {
     id: 8,
     name: '기념일',
     texts: [
-      { id: 22, content: '생신 축하드려요~ 행복한 하루 보내세요^^' },
-      { id: 23, content: '오늘이 가장 젊은날!! 생신 축하드리고\n행복하세요^^' },
-      { id: 24, content: '언제나 신혼부부 같으신 어머니, 아버지~\n결혼 기념일 축하드려요^^' }
+      { id: 22, content: '생신 축하드려요' },
+      { id: 23, content: '행복한 하루 보내세요' },
+      { id: 24, content: '잉꼬부부 엄마아빠\n결혼기념일 축하드려요' }
     ]
   }
 ])
@@ -239,13 +239,13 @@ interface CharacterTextStyles {
 
 const characterTextStyles: CharacterTextStyles = {
   // 일반 캐릭터 (캐릭터 아래에 텍스트)
-  1: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 다람이
-  3: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이
-  5: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
-  7: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
-  8: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이
-  9: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
-  11: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 0.7, lineHeight: 1.2, rotate: 0 }, // 하늘이
+  1: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 2, lineHeight: 1.2, rotate: 0 },  // 다람이
+  3: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 2, lineHeight: 1.2, rotate: 0 },  // 바람이
+  5: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 2, lineHeight: 1.2, rotate: 0 },  // 바람이 한복
+  7: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 2, lineHeight: 1.2, rotate: 0 },  // 바람이 슈퍼맨
+  8: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 2, lineHeight: 1.2, rotate: 0 },  // 아람이
+  9: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 2, lineHeight: 1.2, rotate: 0 },  // 아람이 하트
+  11: { fontSize: 70, offsetX: 0.5, offsetY: 0.2, maxWidth: 2, lineHeight: 1.2, rotate: 0 }, // 하늘이
 
   // 말풍선 캐릭터 (말풍선 안에 텍스트)
   2: { fontSize: 28, offsetX: 0.5, offsetY: 0.8, maxWidth: 0.7, lineHeight: 1.3, rotate: 0 },   // 다람이 말풍선
@@ -497,43 +497,14 @@ const processImage = async (applyBackground: boolean = false) => {
               ctx.translate(-textX, -textY)
             }
 
-            // 텍스트 줄바꿈 처리
-            const maxWidth = charWidth * textStyle.maxWidth
-            const words = customText.value.split('')
-            let line = ''
-            let lines = []
-            
-            for (let i = 0; i < words.length; i++) {
-              const testLine = line + words[i]
-              const metrics = ctx.measureText(testLine)
-              const testWidth = metrics.width
+            // 선택한 글자를 적용
 
-              if (testWidth > maxWidth && line) {
-                lines.push(line)
-                line = words[i]
-              } else {
-                line = testLine
-              }
-            }
-            lines.push(line)
-
-            // 여러 줄의 텍스트 그리기
-            lines.forEach((line, i) => {
-              const lineY = textY + (i - (lines.length - 1) / 2) * (textStyle.fontSize * textStyle.lineHeight)
-              
-              // 텍스트 외곽선 (일반 캐릭터는 흰색 외곽선)
-              ctx.strokeStyle = 'white'
-              ctx.lineWidth = 4
-              ctx.strokeText(line, textX, lineY)
-              
-              // 텍스트 내부
+            /// 적용전 내려적기 적용
+            const textLines = customText.value.split('\n')
+            textLines.forEach((line, index) => {
+              const lineY = textY + index * (textStyle.fontSize * textStyle.lineHeight)
               ctx.fillText(line, textX, lineY)
             })
-
-            // 회전 복원 (필요한 경우)
-            if (textStyle.rotate !== 0) {
-              ctx.restore()
-            }
           }
           resolve(true)
         }
